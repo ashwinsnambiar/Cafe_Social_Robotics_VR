@@ -12,6 +12,9 @@ public class DeliveryRobot : MonoBehaviour
     [SerializeField] private RobotArmController armController;
     [SerializeField] private RobotBodyController bodyController;
 
+    [Header("Arm Poses")]
+    [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -70f, 0f };
+
     private NavMeshAgent agent;
     private Transform currentTarget;
 
@@ -58,6 +61,21 @@ public class DeliveryRobot : MonoBehaviour
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, agent.angularSpeed * Time.deltaTime);
             }
         }
+    }
+
+    // Called by GripperSocketController once the tray is secured
+    public void OnTraySecured()
+    {
+        StartCoroutine(PrepareAndGoToTable());
+    }
+
+    private IEnumerator PrepareAndGoToTable()
+    {
+        bool armsReady = false;
+        armController.MoveBothArms(carryPose, carryPose, () => armsReady = true);
+        yield return new WaitUntil(() => armsReady);
+
+        GoToTable();
     }
 
     // Call this when the Tray is placed on the robot

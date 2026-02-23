@@ -88,8 +88,8 @@ public class GripperSocketController : MonoBehaviour
         }
         else
         {
-            // Successfully closed on tray, go to table
-            deliveryRobot.GoToTable();
+            // Successfully closed on tray, prepare arms and go to table
+            deliveryRobot.OnTraySecured();
             isClosing = false;
         }
     }
