@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -7,6 +8,10 @@ public class DeliveryRobot : MonoBehaviour
     public Transform barPoint;
     public Transform tablePoint;
 
+    [Header("Controllers")]
+    [SerializeField] private RobotArmController armController;
+    [SerializeField] private RobotBodyController bodyController;
+
     private NavMeshAgent agent;
     private Transform currentTarget;
 
@@ -15,8 +20,21 @@ public class DeliveryRobot : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         agent.updateRotation = false;
-        
-        // Start by going to the bar to get the tray
+
+        StartCoroutine(InitAndGoToBar());
+    }
+
+    private IEnumerator InitAndGoToBar()
+    {
+        bool armsReady = false;
+        bool bodyReady = false;
+
+        float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+        armController.MoveBothArms(restPose, restPose, () => armsReady = true);
+        bodyController.MoveBodyAndHead(0.55f, 0f, 0f,   () => bodyReady = true);
+
+        yield return new WaitUntil(() => armsReady && bodyReady);
+
         GoToBar();
     }
 
