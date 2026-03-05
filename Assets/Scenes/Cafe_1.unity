@@ -1497,6 +1497,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000003309920583990705351, type: 3}
+--- !u!171741748 &67801875 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 5471276760067920285, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &68330254 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030975297, guid: abc00000000008965007600174189720, type: 3}
@@ -1941,6 +1946,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000011639680929744856841, type: 3}
+--- !u!171741748 &107653830 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 3261333923585312751, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &108438944
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2804,16 +2814,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryRobot
   barPoint: {fileID: 978046357}
-  tablePoint: {fileID: 2136895561}
-  armController: {fileID: 1628913508}
-  bodyController: {fileID: 1628913509}
+  tables: []
+  tableSelectionCanvas: {fileID: 1059466829}
+  armController: {fileID: 1840841025}
+  bodyController: {fileID: 1840841026}
   carryPose:
   - -45
   - -90
   - 0
   - 85
   - 0
-  - -70
+  - -60
   - 0
 --- !u!114 &153516611
 MonoBehaviour:
@@ -3278,10 +3289,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -3300,7 +3311,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 185842905}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 7
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &185842905
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4703,6 +4726,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000004437801599285929976, type: 3}
+--- !u!171741748 &260482043 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 8747663273839175351, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &264701905 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3704875081465749795, guid: 34845b0e7eaa5b04db7633250bcd6f80, type: 3}
@@ -5788,10 +5816,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -5810,7 +5838,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 357992618}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 4
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &357992618
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5909,10 +5949,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -5931,7 +5971,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 362298370}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 2
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &362298370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7489,10 +7541,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -7511,7 +7563,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 473769412}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 3
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &473769412
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7774,10 +7838,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -7796,7 +7860,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 489722917}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 1
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &489722917
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9161,6 +9237,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000013695126661495803755, type: 3}
+--- !u!171741748 &544755534 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 945745474936291133, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &556116167
 GameObject:
   m_ObjectHideFlags: 0
@@ -10700,6 +10781,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000000222973828188975680, type: 3}
+--- !u!171741748 &674641801 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 2544999888464389016, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &675716227 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5113403946093835550, guid: 3750ffd78952c004fb598f6036dc80d4, type: 3}
@@ -10955,6 +11041,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030976218, guid: abc00000000002479619014130354975, type: 3}
   m_PrefabInstance: {fileID: 601985626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &691074453 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 3783627878053378415, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &691576964
 PrefabInstance:
@@ -15107,6 +15198,16 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!171741748 &856604638 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 5263128220431313965, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &858214664 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 1470691696665818636, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &859164546 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030973627, guid: abc00000000004437801599285929976, type: 3}
@@ -15121,6 +15222,11 @@ Transform:
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030971896, guid: abc00000000007818038014052980379, type: 3}
   m_PrefabInstance: {fileID: 368377239}
+  m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &867613603 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 7701302398020985328, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &867863719 stripped
 Transform:
@@ -16291,6 +16397,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000015719011778032900871, type: 3}
+--- !u!171741748 &901745136 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 8306198854924364182, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &918673317
 GameObject:
   m_ObjectHideFlags: 0
@@ -16976,6 +17087,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030971896, guid: abc00000000007818038014052980379, type: 3}
   m_PrefabInstance: {fileID: 647376507}
+  m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &939155329 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 3887851289648749419, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &940423354
 PrefabInstance:
@@ -17967,6 +18083,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000013695126661495803755, type: 3}
+--- !u!171741748 &985359335 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 5070150128030121656, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &985518248
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18788,6 +18909,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1030974144, guid: abc00000000015719011778032900871, type: 3}
   m_PrefabInstance: {fileID: 427401963}
   m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &1038260182 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 1688071783763580431, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1040428413
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19556,16 +19682,16 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1059466829}
   m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 0, z: 1.13}
-  m_LocalScale: {x: 0.01, y: 0.005, z: 0.01}
+  m_LocalPosition: {x: 0, y: 0, z: 1.5}
+  m_LocalScale: {x: 0.009999999, y: 0.005, z: 0.01}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1783793744}
-  m_Father: {fileID: 1706706716}
+  m_Father: {fileID: 1628913510}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.56, y: -0}
+  m_AnchoredPosition: {x: -0.56, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1059466831
@@ -21023,6 +21149,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1030974129, guid: abc00000000003309920583990705351, type: 3}
   m_PrefabInstance: {fileID: 1221257654}
   m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &1183095272 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 5172284393018264679, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1183614766 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5659481736672135852, guid: 3ce60c1a67d0c1943bb31f0d9720a665, type: 3}
@@ -21398,6 +21529,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000018082672199004185175, type: 3}
+--- !u!171741748 &1215966947 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 11631072492626499, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1221257654
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24063,6 +24199,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1332671315}
   m_CullTransparentMesh: 1
+--- !u!171741748 &1339794072 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 7180370493284202487, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1340621777 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 791014116261844490, guid: 8c192caf4df5a4c4ba9847a271ecc28a, type: 3}
@@ -26817,10 +26958,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -26839,7 +26980,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1494025063}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 5
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1494025063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28865,37 +29018,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000008439722194641347956, type: 3}
---- !u!1 &1628913506 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6540148764784611425, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+--- !u!4 &1628913510 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7103311100708848681, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
   m_PrefabInstance: {fileID: 2024049923}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1628913508
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1628913506}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b888fe92d3d44d54faeebc789d83a41c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RobotArmController
-  jointSpeed: 45
---- !u!114 &1628913509
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1628913506}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6cdc6f9251df494fb8e9711c24dc7e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RobotBodyController
-  jointSpeed: 1
 --- !u!4 &1630025942 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030975316, guid: abc00000000015527839668865543402, type: 3}
@@ -29923,10 +30050,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -29945,7 +30072,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1693148861}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1693148861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30127,11 +30266,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000002479619014130354975, type: 3}
---- !u!4 &1706706716 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 928369530533738668, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
-  m_PrefabInstance: {fileID: 2024049923}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1708215242
 GameObject:
   m_ObjectHideFlags: 0
@@ -31720,6 +31854,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1030974099, guid: abc00000000007945107163107764089, type: 3}
   m_PrefabInstance: {fileID: 2113342606}
   m_PrefabAsset: {fileID: 0}
+--- !u!171741748 &1808203309 stripped
+ArticulationBody:
+  m_CorrespondingSourceObject: {fileID: 5468852908997492578, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1810411984 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030971957, guid: abc00000000001863489699083815464, type: 3}
@@ -31866,10 +32005,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_NormalColor: {r: 0.8235295, g: 0.4666667, b: 0, a: 1}
+    m_HighlightedColor: {r: 0.9811321, g: 0, b: 0, a: 1}
+    m_PressedColor: {r: 0.0029071267, g: 0.9245283, b: 0.0828, a: 1}
+    m_SelectedColor: {r: 0.019536367, g: 0.7372549, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -31888,7 +32027,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1814879952}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 153516610}
+        m_TargetAssemblyTypeName: DeliveryRobot, Assembly-CSharp
+        m_MethodName: SelectTable
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 6
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1814879952
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32263,6 +32414,54 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1030974825, guid: abc00000000006895065015276021911, type: 3}
   m_PrefabInstance: {fileID: 401896035}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1840841024 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6794358208226818390, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1840841025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1840841024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b888fe92d3d44d54faeebc789d83a41c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotArmController
+  jointSpeed: 45
+  link1_l: {fileID: 544755534}
+  link2_l: {fileID: 1339794072}
+  link3_l: {fileID: 691074453}
+  link4_l: {fileID: 67801875}
+  link5_l: {fileID: 901745136}
+  link6_l: {fileID: 107653830}
+  link7_l: {fileID: 985359335}
+  link1_r: {fileID: 260482043}
+  link2_r: {fileID: 867613603}
+  link3_r: {fileID: 1215966947}
+  link4_r: {fileID: 1038260182}
+  link5_r: {fileID: 856604638}
+  link6_r: {fileID: 1808203309}
+  link7_r: {fileID: 674641801}
+--- !u!114 &1840841026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1840841024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6cdc6f9251df494fb8e9711c24dc7e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotBodyController
+  jointSpeed: 1
+  link_up_down_body: {fileID: 939155329}
+  link_pitch_body: {fileID: 858214664}
+  link_yaw_head: {fileID: 1183095272}
 --- !u!1001 &1841821681
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35061,8 +35260,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 928369530533738668, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
-      insertIndex: -1
+    - targetCorrespondingSourceObject: {fileID: 7103311100708848681, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+      insertIndex: 0
       addedObject: {fileID: 1059466830}
     - targetCorrespondingSourceObject: {fileID: 7719204638079735780, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
@@ -35077,12 +35276,12 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1795330580}
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6540148764784611425, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 6794358208226818390, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1628913509}
-    - targetCorrespondingSourceObject: {fileID: 6540148764784611425, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+      addedObject: {fileID: 1840841026}
+    - targetCorrespondingSourceObject: {fileID: 6794358208226818390, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1628913508}
+      addedObject: {fileID: 1840841025}
     - targetCorrespondingSourceObject: {fileID: 4169274714504623770, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
       addedObject: {fileID: 325888322}
