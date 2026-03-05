@@ -13,7 +13,7 @@ public class DeliveryRobot : MonoBehaviour
     [SerializeField] private RobotBodyController bodyController;
 
     [Header("Arm Poses")]
-    [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -70f, 0f };
+    [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
 
     private NavMeshAgent agent;
     private Transform currentTarget;

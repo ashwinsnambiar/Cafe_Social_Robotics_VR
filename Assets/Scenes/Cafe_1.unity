@@ -2805,8 +2805,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryRobot
   barPoint: {fileID: 978046357}
   tablePoint: {fileID: 2136895561}
-  armController: {fileID: 1706706715}
-  bodyController: {fileID: 1706706714}
+  armController: {fileID: 1628913508}
+  bodyController: {fileID: 1628913509}
+  carryPose:
+  - -45
+  - -90
+  - 0
+  - 85
+  - 0
+  - -70
+  - 0
 --- !u!114 &153516611
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27001,6 +27009,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000008439722194641347956, type: 3}
+--- !u!1 &1628913506 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6540148764784611425, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+  m_PrefabInstance: {fileID: 2024049923}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1628913508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628913506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b888fe92d3d44d54faeebc789d83a41c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotArmController
+  jointSpeed: 45
+--- !u!114 &1628913509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628913506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6cdc6f9251df494fb8e9711c24dc7e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotBodyController
+  jointSpeed: 1
 --- !u!4 &1630025942 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1030975316, guid: abc00000000015527839668865543402, type: 3}
@@ -28111,37 +28150,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000002479619014130354975, type: 3}
---- !u!1 &1706706711 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6794358208226818390, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
-  m_PrefabInstance: {fileID: 2024049923}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1706706714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1706706711}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6cdc6f9251df494fb8e9711c24dc7e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RobotBodyController
-  jointSpeed: 1
---- !u!114 &1706706715
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1706706711}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b888fe92d3d44d54faeebc789d83a41c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RobotArmController
-  jointSpeed: 45
 --- !u!1 &1708215242
 GameObject:
   m_ObjectHideFlags: 0
@@ -32575,12 +32583,12 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1795330580}
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6794358208226818390, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 6540148764784611425, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1706706714}
-    - targetCorrespondingSourceObject: {fileID: 6794358208226818390, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+      addedObject: {fileID: 1628913509}
+    - targetCorrespondingSourceObject: {fileID: 6540148764784611425, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1706706715}
+      addedObject: {fileID: 1628913508}
     - targetCorrespondingSourceObject: {fileID: 4169274714504623770, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
       insertIndex: -1
       addedObject: {fileID: 325888322}
