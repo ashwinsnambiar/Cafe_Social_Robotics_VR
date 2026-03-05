@@ -12,58 +12,36 @@ public class RobotArmController : MonoBehaviour
     // Initial rest pose: Link1=0, Link2=-90, Link3=0, Link4=85, Link5/6/7=0
     private static readonly float[] RestPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
 
+    [Header("Left Arm Links")]
+    public ArticulationBody link1_l;
+    public ArticulationBody link2_l;
+    public ArticulationBody link3_l;
+    public ArticulationBody link4_l;
+    public ArticulationBody link5_l;
+    public ArticulationBody link6_l;
+    public ArticulationBody link7_l;
+
+    [Header("Right Arm Links")]
+    public ArticulationBody link1_r;
+    public ArticulationBody link2_r;
+    public ArticulationBody link3_r;
+    public ArticulationBody link4_r;
+    public ArticulationBody link5_r;
+    public ArticulationBody link6_r;
+    public ArticulationBody link7_r;
+
     private ArticulationBody[] _leftArm;
     private ArticulationBody[] _rightArm;
 
     private Coroutine _leftArmRoutine;
     private Coroutine _rightArmRoutine;
 
-    private ArticulationBody FindArticulationBodyRecursive(Transform parent, string name)
-    {
-        foreach (Transform child in parent)
-        {
-            if (child.name == name)
-            {
-                return child.GetComponent<ArticulationBody>();
-            }
-
-            ArticulationBody found = FindArticulationBodyRecursive(child, name);
-            if (found != null)
-            {
-                return found;
-            }
-        }
-        return null;
-    }
 
     void Start()
     {
-        // Automatically populate left and right arm links based on naming convention
-        _leftArm = new ArticulationBody[7];
-        _rightArm = new ArticulationBody[7];
-
-        for (int i = 0; i < 7; i++)
-        {
-            string leftLinkName = $"Link{i + 1}_l";
-            string rightLinkName = $"Link{i + 1}_r";
-
-            _leftArm[i] = FindArticulationBodyRecursive(transform, leftLinkName);
-            _rightArm[i] = FindArticulationBodyRecursive(transform, rightLinkName);
-
-            if (_leftArm[i] == null || _rightArm[i] == null)
-            {
-                Debug.LogError($"[RobotArmController] Failed to find articulation body for {leftLinkName} or {rightLinkName}.");
-            }
-        }
-
-        //// Set arms to rest pose
-        //SetArmImmediate(_leftArm, RestPose);
-        //SetArmImmediate(_rightArm, RestPose);
-
-        // Test: Move Link1 to -45 and Link6 to -70
-        //float[] testLeftAngles = { -45f, -90f, 0f, 85f, 0f, -70f, 0f };
-        //float[] testRightAngles = { -45f, -90f, 0f, 85f, 0f, -70f, 0f };
-        //MoveBothArms(testLeftAngles, testRightAngles);
+        // Manually assign left and right arm arrays from Inspector fields
+        _leftArm = new[] { link1_l, link2_l, link3_l, link4_l, link5_l, link6_l, link7_l };
+        _rightArm = new[] { link1_r, link2_r, link3_r, link4_r, link5_r, link6_r, link7_r };
     }
 
     /// <summary>

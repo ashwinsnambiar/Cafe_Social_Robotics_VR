@@ -7,24 +7,16 @@ public class RobotBodyController : MonoBehaviour
     [Header("Settings")]
     public float jointSpeed = 45f; // degrees per second
 
-    private ArticulationBody _linkUpDownBody;
-    private ArticulationBody _linkPitchBody;
-    private ArticulationBody _linkYawHead;
+    [Header("Body/Head Links")]
+    public ArticulationBody link_up_down_body;
+    public ArticulationBody link_pitch_body;
+    public ArticulationBody link_yaw_head;
 
     private Coroutine _bodyRoutine;
 
     void Start()
     {
-        // Automatically find the articulation bodies
-        _linkUpDownBody = FindArticulationBodyRecursive(transform, "link_up_down_body");
-        _linkPitchBody = FindArticulationBodyRecursive(transform, "link_pitch_body");
-        _linkYawHead = FindArticulationBodyRecursive(transform, "link_yaw_head");
 
-        if (_linkUpDownBody == null || _linkPitchBody == null || _linkYawHead == null)
-        {
-            Debug.LogError("[RobotBodyController] Failed to find one or more body/head articulation bodies.");
-            return;
-        }
 
     }
 
@@ -40,9 +32,9 @@ public class RobotBodyController : MonoBehaviour
 
     private IEnumerator DriveBodyAndHead(float upDownAngle, float pitchAngle, float yawAngle, Action onComplete = null)
     {
-        float startUpDown = _linkUpDownBody.zDrive.target;
-        float startPitch = _linkPitchBody.xDrive.target;
-        float startYaw = _linkYawHead.xDrive.target;
+        float startUpDown = link_up_down_body.zDrive.target;
+        float startPitch = link_pitch_body.xDrive.target;
+        float startYaw = link_yaw_head.xDrive.target;
 
         float maxDelta = Mathf.Max(
             Mathf.Abs(upDownAngle - startUpDown),
@@ -60,16 +52,16 @@ public class RobotBodyController : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
 
-            SetJointTarget(_linkUpDownBody, Mathf.Lerp(startUpDown, upDownAngle, t), true);
-            SetJointTarget(_linkPitchBody, Mathf.Lerp(startPitch, pitchAngle, t));
-            SetJointTarget(_linkYawHead, Mathf.Lerp(startYaw, yawAngle, t));
+            SetJointTarget(link_up_down_body, Mathf.Lerp(startUpDown, upDownAngle, t), true);
+            SetJointTarget(link_pitch_body, Mathf.Lerp(startPitch, pitchAngle, t));
+            SetJointTarget(link_yaw_head, Mathf.Lerp(startYaw, yawAngle, t));
 
             yield return null;
         }
 
-        SetJointTarget(_linkUpDownBody, upDownAngle, true);
-        SetJointTarget(_linkPitchBody, pitchAngle);
-        SetJointTarget(_linkYawHead, yawAngle);
+        SetJointTarget(link_up_down_body, upDownAngle, true);
+        SetJointTarget(link_pitch_body, pitchAngle);
+        SetJointTarget(link_yaw_head, yawAngle);
 
         onComplete?.Invoke();
     }
@@ -89,21 +81,4 @@ public class RobotBodyController : MonoBehaviour
         }
     }
 
-    private ArticulationBody FindArticulationBodyRecursive(Transform parent, string name)
-    {
-        foreach (Transform child in parent)
-        {
-            if (child.name == name)
-            {
-                return child.GetComponent<ArticulationBody>();
-            }
-
-            ArticulationBody found = FindArticulationBodyRecursive(child, name);
-            if (found != null)
-            {
-                return found;
-            }
-        }
-        return null;
-    }
 }
