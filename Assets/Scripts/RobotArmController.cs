@@ -37,7 +37,7 @@ public class RobotArmController : MonoBehaviour
     private Coroutine _rightArmRoutine;
 
 
-    void Start()
+    void Awake()
     {
         // Manually assign left and right arm arrays from Inspector fields
         _leftArm = new[] { link1_l, link2_l, link3_l, link4_l, link5_l, link6_l, link7_l };
