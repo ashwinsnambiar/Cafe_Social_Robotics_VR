@@ -11,6 +11,8 @@ This project uses the following third-party assets located in the `Assets/ThirdP
   - Downloaded from: https://assetstore.unity.com/packages/3d/environments/fast-food-restaurant-kit-239419
 - **Female Civilian Model**
   - Downloaded from: https://assetstore.unity.com/packages/3d/characters/humanoids/humans/female-civilian-283633
+- **NPC Casual Set 00**
+  - Downloaded from: https://assetstore.unity.com/packages/3d/characters/humanoids/humans/npc-casual-set-00-326131
 
 ## Robot Model
 - **Agibot G1 Robot**
@@ -21,6 +23,11 @@ This project uses the following third-party assets located in the `Assets/ThirdP
 - **Mixamo Animations**
   - Used for background cafe customers
   - Downloaded from: https://www.mixamo.com/
+
+## Sound Effects
+- **FreeSFX Sound Effects**
+  - Sound effects downloaded from: https://www.freesfx.co.uk/
+  - Please refer to FreeSFX for license terms and attribution requirements.
 
 ## Usage
 Please refer to the original asset pages for license terms and usage restrictions. Cite and credit as required by each asset provider.
