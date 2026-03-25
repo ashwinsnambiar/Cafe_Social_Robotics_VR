@@ -40,6 +40,7 @@ public class GripperSocketController : MonoBehaviour
     {
         Debug.Log("Tray removed. Opening gripper.");
         gripperControl.OpenGripper();
+        deliveryRobot?.OnTrayRemoved();
         isClosing = false;
         isWaitingToClose = false;
     }

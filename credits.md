@@ -29,6 +29,10 @@ This project uses the following third-party assets located in the `Assets/ThirdP
   - Sound effects downloaded from: https://www.freesfx.co.uk/
   - Please refer to FreeSFX for license terms and attribution requirements.
 
+## Speech Recognition
+- **Whisper Tiny (Unity Sentis Integration)**
+  - Model from Unity: https://huggingface.co/unity/inference-engine-whisper-tiny
+
 ## Usage
 Please refer to the original asset pages for license terms and usage restrictions. Cite and credit as required by each asset provider.
 

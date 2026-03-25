@@ -17,6 +17,8 @@ This repository contains a Unity project for simulating a social robot in a virt
 - Interactive bar setup with bakery and burger assets
 - VR hand grab and place mechanics
 - Animated background customers
+- Navigation from bar to table using a pop-up window interface
+- Navigation using Speech recognition too using Whisper Tiny (Unity Sentis integration) - Work in progress
 
 ## Asset Credits
 See [credits.md](./credits.md) for a full list of third-party assets used in this project.

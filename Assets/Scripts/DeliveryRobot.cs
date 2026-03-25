@@ -1,12 +1,9 @@
 using System.Collections;
-using UnityEngine;
-using UnityEngine.AI;
-
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Text.RegularExpressions;
 
 public class DeliveryRobot : MonoBehaviour
 {
@@ -24,8 +21,29 @@ public class DeliveryRobot : MonoBehaviour
     [Header("Arm Poses")]
     [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
 
+    private static readonly Regex TableNumberRegex = new Regex(@"\btable(?:\s+number)?\s*(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten|to|too)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex AnyNumberRegex = new Regex(@"\b(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Dictionary<string, int> NumberWordMap = new Dictionary<string, int>(System.StringComparer.OrdinalIgnoreCase)
+    {
+        { "zero", 0 },
+        { "one", 1 },
+        { "two", 2 },
+        { "to", 2 },
+        { "too", 2 },
+        { "three", 3 },
+        { "four", 4 },
+        { "five", 5 },
+        { "six", 6 },
+        { "seven", 7 },
+        { "eight", 8 },
+        { "nine", 9 },
+        { "ten", 10 }
+    };
+
     private NavMeshAgent agent;
     private Transform currentTarget;
+    private bool canAcceptTableSelection;
+    private int pendingVoiceTableIndex = -1;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -100,6 +118,16 @@ public class DeliveryRobot : MonoBehaviour
     // Called by GripperSocketController once the tray is secured
     public void OnTraySecured()
     {
+        canAcceptTableSelection = true;
+
+        if (pendingVoiceTableIndex >= 0)
+        {
+            int queuedIndex = pendingVoiceTableIndex;
+            pendingVoiceTableIndex = -1;
+            SelectTable(queuedIndex);
+            return;
+        }
+
         if (tableSelectionCanvas != null)
         {
             tableSelectionCanvas.SetActive(true);
@@ -114,17 +142,48 @@ public class DeliveryRobot : MonoBehaviour
     // Optional: If the tray is removed before selecting a table
     public void OnTrayRemoved()
     {
+        canAcceptTableSelection = false;
+        pendingVoiceTableIndex = -1;
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
+    }
+
+    public void ProcessVoiceCommand(string rawText)
+    {
+        if (string.IsNullOrWhiteSpace(rawText))
+            return;
+
+        if (!TryExtractSpokenTableNumber(rawText, out int spokenTableNumber))
+            return;
+
+        int tableIndex = ResolveTableIndex(spokenTableNumber);
+        if (tableIndex < 0)
+            return;
+
+        if (canAcceptTableSelection)
+        {
+            SelectTable(tableIndex);
+            return;
+        }
+
+        pendingVoiceTableIndex = tableIndex;
     }
 
     // Called by UI Buttons (On Click events)
     public void SelectTable(int tableIndex)
     {
+        if (!canAcceptTableSelection)
+        {
+            Debug.LogWarning("Ignoring table selection because tray is not secured yet.");
+            return;
+        }
+
         if (tableIndex < 0 || tableIndex >= tables.Length)
         {
             Debug.LogError("Invalid Table Index!");
             return;
         }
+
+        canAcceptTableSelection = false;
 
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
 
@@ -149,7 +208,53 @@ public class DeliveryRobot : MonoBehaviour
     // Call this to reset the robot
     public void GoToBar()
     {
+        canAcceptTableSelection = false;
+        pendingVoiceTableIndex = -1;
+        if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
+
         currentTarget = barPoint;
         agent.SetDestination(barPoint.position);
+    }
+
+    private bool TryExtractSpokenTableNumber(string rawText, out int tableNumber)
+    {
+        var tableMatch = TableNumberRegex.Match(rawText);
+        if (tableMatch.Success && TryParseSpokenNumber(tableMatch.Groups[1].Value, out tableNumber))
+            return true;
+
+        var anyNumberMatch = AnyNumberRegex.Match(rawText);
+        if (anyNumberMatch.Success && TryParseSpokenNumber(anyNumberMatch.Groups[1].Value, out tableNumber))
+            return true;
+
+        tableNumber = -1;
+        return false;
+    }
+
+    private bool TryParseSpokenNumber(string token, out int value)
+    {
+        token = token.Trim().ToLowerInvariant();
+
+        if (int.TryParse(token, out value))
+            return true;
+
+        return NumberWordMap.TryGetValue(token, out value);
+    }
+
+    private int ResolveTableIndex(int spokenTableNumber)
+    {
+        for (int i = 0; i < tables.Length; i++)
+        {
+            if (ParseTableIndex(tables[i].name) == spokenTableNumber)
+                return i;
+        }
+
+        int oneBasedIndex = spokenTableNumber - 1;
+        if (oneBasedIndex >= 0 && oneBasedIndex < tables.Length)
+            return oneBasedIndex;
+
+        if (spokenTableNumber >= 0 && spokenTableNumber < tables.Length)
+            return spokenTableNumber;
+
+        return -1;
     }
 }
