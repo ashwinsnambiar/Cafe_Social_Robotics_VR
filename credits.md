@@ -13,6 +13,9 @@ This project uses the following third-party assets located in the `Assets/ThirdP
   - Downloaded from: https://assetstore.unity.com/packages/3d/characters/humanoids/humans/female-civilian-283633
 - **NPC Casual Set 00**
   - Downloaded from: https://assetstore.unity.com/packages/3d/characters/humanoids/humans/npc-casual-set-00-326131
+ - **Exploding Objects**
+   - Used for exploding bottle fragments and included sound effects/SFX
+   - Downloaded from: https://assetstore.unity.com/packages/3d/props/exploding-objects-255996
 
 ## Robot Model
 - **Agibot G1 Robot**
