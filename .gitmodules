@@ -1,0 +1,4 @@
+[submodule "Assets/ThirdPartyAssets/inference-engine-whisper-tiny"]
+	path = Assets/ThirdPartyAssets/inference-engine-whisper-tiny
+	url = https://huggingface.co/unity/inference-engine-whisper-tiny
+	ignore = dirty
