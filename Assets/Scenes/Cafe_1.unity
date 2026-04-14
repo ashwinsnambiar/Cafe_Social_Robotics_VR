@@ -2674,6 +2674,7 @@ GameObject:
   - component: {fileID: 153516611}
   - component: {fileID: 153516610}
   - component: {fileID: 153516612}
+  - component: {fileID: 153516613}
   m_Layer: 6
   m_Name: Robot_Moving_Base
   m_TagString: Untagged
@@ -2843,6 +2844,7 @@ MonoBehaviour:
   - 0
   - -60
   - 0
+  navigator: {fileID: 0}
 --- !u!114 &153516611
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2868,6 +2870,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobotCleanupSequence
   agent: {fileID: 153516609}
+  navigator: {fileID: 0}
   mainRobotLogic: {fileID: 153516610}
   autoSubscribeToDistraction: 1
   distractionEventReference: {fileID: 0}
@@ -2877,6 +2880,23 @@ MonoBehaviour:
   broomAndPanPrefab: {fileID: 0}
   gripperSocket: {fileID: 0}
   dustpanCatchArea: {fileID: 0}
+--- !u!114 &153516613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 153516603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e188237e150af0742824c08196479585, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotNavigator
+  agent: {fileID: 153516609}
+  debug: 0
+  onArrived:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &164665237
 GameObject:
   m_ObjectHideFlags: 0
@@ -31924,7 +31944,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4461636250912910615, guid: efa0d72b46130f142805a91b60a05b06, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.873049
+      value: -3.943
       objectReference: {fileID: 0}
     - target: {fileID: 4461636250912910615, guid: efa0d72b46130f142805a91b60a05b06, type: 3}
       propertyPath: m_LocalPosition.y
@@ -31932,7 +31952,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4461636250912910615, guid: efa0d72b46130f142805a91b60a05b06, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 6.3279505
+      value: 6.349
       objectReference: {fileID: 0}
     - target: {fileID: 4461636250912910615, guid: efa0d72b46130f142805a91b60a05b06, type: 3}
       propertyPath: m_LocalRotation.w

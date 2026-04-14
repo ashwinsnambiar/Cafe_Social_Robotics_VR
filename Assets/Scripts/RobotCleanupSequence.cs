@@ -8,6 +8,7 @@ public class RobotCleanupSequence : MonoBehaviour
 {
     [Header("Core References")]
     public NavMeshAgent agent;
+    public RobotNavigator navigator;
     // Main robot logic that should be suspended during cleanup
     public MonoBehaviour mainRobotLogic;
     
@@ -30,29 +31,22 @@ public class RobotCleanupSequence : MonoBehaviour
     public Transform dustpanCatchArea;
 
     private bool isApproved = false;
+    private bool mainLogicWasDisabled = false;
 
     void Start()
     {
         if (cleanupApprovalUI != null) cleanupApprovalUI.SetActive(false);
-        Debug.Log("RobotCleanupSequence: Initialized. Waiting for crash events.");
-
         if (autoSubscribeToDistraction)
         {
             if (distractionEventReference == null)
-            {
                 distractionEventReference = FindObjectOfType<DistractionEvent>();
-            }
 
             if (distractionEventReference != null)
-            {
                 distractionEventReference.onCrashOccurred.AddListener(OnHeardCrash);
-                Debug.Log($"RobotCleanupSequence: Auto-subscribed to DistractionEvent on '{distractionEventReference.gameObject.name}'.");
-            }
-            else
-            {
-                Debug.LogWarning("RobotCleanupSequence: No DistractionEvent found in scene to subscribe to.");
-            }
         }
+
+        if (navigator == null)
+            navigator = GetComponent<RobotNavigator>();
     }
 
     void OnDestroy()
@@ -60,7 +54,6 @@ public class RobotCleanupSequence : MonoBehaviour
         if (distractionEventReference != null)
         {
             distractionEventReference.onCrashOccurred.RemoveListener(OnHeardCrash);
-            Debug.Log("RobotCleanupSequence: Unsubscribed from DistractionEvent.");
         }
     }
 
@@ -68,7 +61,6 @@ public class RobotCleanupSequence : MonoBehaviour
     public void OnHeardCrash(Transform spillLocation)
     {
         currentSpillLocation = spillLocation;
-        Debug.Log($"RobotCleanupSequence: Heard crash at {spillLocation?.position}. Starting cleanup routine.");
         if (spillLocation == null)
         {
             Debug.LogWarning("RobotCleanupSequence: Received null spillLocation in OnHeardCrash.");
@@ -82,26 +74,21 @@ public class RobotCleanupSequence : MonoBehaviour
     {
         isApproved = true;
         if (cleanupApprovalUI != null) cleanupApprovalUI.SetActive(false);
-        Debug.Log("RobotCleanupSequence: Cleanup approved by operator via UI.");
     }
 
     private IEnumerator CleanupRoutine()
     {
         // 1. Suspend normal operations
-        if (mainRobotLogic != null) mainRobotLogic.enabled = false;
-        else
+        mainLogicWasDisabled = false;
+        if (mainRobotLogic != null)
         {
-            Debug.LogWarning("RobotCleanupSequence: mainRobotLogic not assigned; nothing to suspend.");
+            mainRobotLogic.enabled = false;
+            mainLogicWasDisabled = true;
         }
-        Debug.Log("RobotCleanupSequence: Suspended main robot logic and beginning cleanup sequence.");
 
         // 2. Go to Operator
         if (operatorStandpoint != null)
-        {
-            Debug.Log("RobotCleanupSequence: Moving to operator standpoint.");
-            yield return StartCoroutine(MoveToLocation(operatorStandpoint.position));
-            Debug.Log("RobotCleanupSequence: Arrived at operator standpoint.");
-        }
+            yield return StartCoroutine(MoveToLocation(operatorStandpoint.position, operatorStandpoint));
         else
         {
             Debug.LogWarning("RobotCleanupSequence: operatorStandpoint not assigned.");
@@ -109,28 +96,15 @@ public class RobotCleanupSequence : MonoBehaviour
 
         // 3. Prompt VR User
         if (cleanupApprovalUI != null)
-        {
             cleanupApprovalUI.SetActive(true);
-            Debug.Log("RobotCleanupSequence: Displayed cleanup approval UI to operator.");
-        }
-        else
-        {
-            Debug.LogWarning("RobotCleanupSequence: cleanupApprovalUI not assigned - cannot prompt operator.");
-        }
         isApproved = false;
         yield return new WaitUntil(() => isApproved == true);
 
         // 4. Fetch Tools
         if (broomStorageLocation != null)
-        {
-            Debug.Log("RobotCleanupSequence: Moving to broom storage to pick up tools.");
-            yield return StartCoroutine(MoveToLocation(broomStorageLocation.position));
-            Debug.Log("RobotCleanupSequence: Arrived at broom storage.");
-        }
+            yield return StartCoroutine(MoveToLocation(broomStorageLocation.position, broomStorageLocation));
         else
-        {
             Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned.");
-        }
         
         // Snap tools to gripper
         if (broomAndPanPrefab != null && gripperSocket != null)
@@ -138,62 +112,77 @@ public class RobotCleanupSequence : MonoBehaviour
             broomAndPanPrefab.transform.SetParent(gripperSocket, worldPositionStays: false);
             broomAndPanPrefab.transform.localPosition = Vector3.zero;
             broomAndPanPrefab.transform.localRotation = Quaternion.identity;
-            Debug.Log("RobotCleanupSequence: Picked up broom and pan and attached to gripper.");
-        }
-        else
-        {
-            Debug.LogWarning("RobotCleanupSequence: broomAndPanPrefab or gripperSocket not assigned; cannot pick up tools.");
         }
 
         // 5. Go to Spill
         if (currentSpillLocation != null)
-        {
-            Debug.Log($"RobotCleanupSequence: Moving to spill at {currentSpillLocation.position}.");
-            yield return StartCoroutine(MoveToLocation(currentSpillLocation.position));
-            Debug.Log("RobotCleanupSequence: Arrived at spill location.");
-        }
+            yield return StartCoroutine(MoveToLocation(currentSpillLocation.position, currentSpillLocation));
         else
         {
             Debug.LogWarning("RobotCleanupSequence: currentSpillLocation is null - aborting cleanup.");
             // Resume operations if possible
-            if (mainRobotLogic != null) mainRobotLogic.enabled = true;
+            if (mainRobotLogic != null && mainLogicWasDisabled)
+            {
+                mainRobotLogic.enabled = true;
+            }
             yield break;
         }
 
         // 6. Perform procedural cleaning motion & collect fragments
-        Debug.Log("RobotCleanupSequence: Beginning sweep and collect routine.");
         yield return StartCoroutine(SweepAndCollect());
-        Debug.Log("RobotCleanupSequence: Finished sweep and collect routine.");
 
         // 7. Resume normal operations (or go to a trash can state)
-        if (mainRobotLogic != null)
-        {
+        if (mainRobotLogic != null && mainLogicWasDisabled)
             mainRobotLogic.enabled = true;
-            Debug.Log("RobotCleanupSequence: Resumed main robot logic.");
-        }
-        else
-        {
-            Debug.LogWarning("RobotCleanupSequence: mainRobotLogic not assigned when trying to resume.");
-        }
     }
 
     private IEnumerator MoveToLocation(Vector3 destination)
     {
+        // Prefer Navigator if present
+        if (navigator != null)
+        {
+            var move = StartCoroutine(navigator.MoveToAsync(destination));
+            // wait until navigator completes
+            yield return move;
+            yield break;
+        }
+
+        // fallback to using local NavMeshAgent
         if (agent == null)
         {
             Debug.LogWarning("RobotCleanupSequence: NavMeshAgent not assigned; cannot move to destination.");
             yield break;
         }
-        Debug.Log($"RobotCleanupSequence: Agent setting destination to {destination}.");
+
         agent.SetDestination(destination);
-        // Wait until path is calculated and agent is moving
         yield return new WaitUntil(() => agent.pathPending == false);
-        Debug.Log("RobotCleanupSequence: Agent path pending false, waiting for arrival.");
-        // Wait until agent reaches destination
-        yield return new WaitUntil(() => agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("RobotCleanupSequence: Agent reached destination.");
-        // Brief pause to settle
-        yield return new WaitForSeconds(0.5f);
+        while (agent.remainingDistance > agent.stoppingDistance)
+            yield return null;
+        yield return new WaitForSeconds(0.1f);
+    }
+
+    // Overload that accepts a target transform so the robot will rotate to that transform when it arrives
+    private IEnumerator MoveToLocation(Vector3 destination, Transform targetTransform)
+    {
+        // If navigator exists, ask it to move with look target
+        if (navigator != null)
+        {
+            yield return StartCoroutine(navigator.MoveToAsync(destination, targetTransform));
+            yield break;
+        }
+
+        // Fallback: do the move and then rotate to match the targetTransform
+        yield return StartCoroutine(MoveToLocation(destination));
+        if (targetTransform != null && agent != null)
+        {
+            var timeout = 1.0f;
+            while (timeout > 0f && Quaternion.Angle(transform.rotation, targetTransform.rotation) > 0.5f)
+            {
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetTransform.rotation, agent.angularSpeed * Time.deltaTime);
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+        }
     }
 
     private IEnumerator SweepAndCollect()
@@ -218,7 +207,6 @@ public class RobotCleanupSequence : MonoBehaviour
         if (currentSpillLocation != null)
         {
             Collider[] hits = Physics.OverlapSphere(currentSpillLocation.position, 1.5f);
-            Debug.Log($"RobotCleanupSequence: Found {hits.Length} colliders near spill.");
             foreach (Collider col in hits)
             {
                 Rigidbody rb = col.attachedRigidbody;
@@ -236,7 +224,6 @@ public class RobotCleanupSequence : MonoBehaviour
                         Vector3 randomOffset = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(0f, 0.1f), Random.Range(-0.1f, 0.1f));
                         col.transform.localPosition = randomOffset;
                         collectedCount++;
-                        Debug.Log($"RobotCleanupSequence: Collected fragment '{col.gameObject.name}' into dustpan.");
                     }
                     else
                     {

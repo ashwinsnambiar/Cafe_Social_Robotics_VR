@@ -55,11 +55,6 @@ public class DistractionEvent : MonoBehaviour
             return;
         }
 
-        if (!Application.isFocused)
-        {
-            Debug.Log("DistractionEvent: Application not focused. Click the Game view and press keys while in Play mode.");
-        }
-
         if (!hasTriggered)
         {
             // Only support a small set of keys directly via the Input System
@@ -77,7 +72,6 @@ public class DistractionEvent : MonoBehaviour
     [ContextMenu("Trigger Spill Event")]
     public void TriggerSpill()
     {
-        Debug.Log("DistractionEvent: TriggerSpill called.");
         if (hasTriggered) return;
 
         hasTriggered = true;
@@ -88,7 +82,6 @@ public class DistractionEvent : MonoBehaviour
             var rb = intactObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                Debug.Log($"DistractionEvent: Releasing intact object '{intactObject.name}' with Rigidbody. Kinematic -> false, useGravity -> true.");
                 rb.isKinematic = false;
                 rb.useGravity = true;
 
@@ -97,28 +90,22 @@ public class DistractionEvent : MonoBehaviour
                 if (push != Vector3.zero)
                 {
                     rb.AddForce(push, ForceMode.VelocityChange);
-                    Debug.Log($"DistractionEvent: Applied push force {push} to '{intactObject.name}'.");
                 }
 
                 // Attach an ImpactNotifier to trigger explosion immediately on hitting the ground
                 var notifier = intactObject.AddComponent<ImpactNotifier>();
                 notifier.groundY = groundY;
                 notifier.onImpact = HandleImpact;
-                Debug.Log($"DistractionEvent: Attached ImpactNotifier to '{intactObject.name}' (groundY={groundY}).");
             }
             else
             {
-                // No rigidbody — try to explode via ExplosiveObject, otherwise destroy
-                Debug.Log($"DistractionEvent: No Rigidbody found on '{intactObject.name}'. Using fallback destruction/explosion.");
                 var explosiveComp = intactObject.GetComponent<ExpObj.ExplosiveObject>();
                 if (explosiveComp != null)
                 {
-                    Debug.Log($"DistractionEvent: Found ExplosiveObject on '{intactObject.name}', calling Explode().");
                     explosiveComp.Explode();
                 }
                 else
                 {
-                    Debug.Log($"DistractionEvent: Destroying intact object '{intactObject.name}'.");
                     Destroy(intactObject);
                 }
             }
@@ -140,34 +127,16 @@ public class DistractionEvent : MonoBehaviour
             return;
         }
 
-        Debug.Log($"DistractionEvent: HandleImpact invoked for '{t.gameObject.name}' at position {t.position}.");
         // Notify any listeners (e.g. the robot cleanup sequence) that a crash occurred here
-        Debug.Log("DistractionEvent: Invoking onCrashOccurred UnityEvent.");
         onCrashOccurred?.Invoke(t);
-
-        // Fallback: directly find a RobotCleanupSequence in the scene and call it so the robot hears the crash
-        var robot = FindObjectOfType<RobotCleanupSequence>();
-        if (robot != null)
-        {
-            Debug.Log($"DistractionEvent: Directly notifying RobotCleanupSequence on '{robot.gameObject.name}' as a fallback.");
-            if (!robot.enabled)
-            {
-                Debug.Log("DistractionEvent: RobotCleanupSequence component was disabled - enabling so it can process the event.");
-                robot.enabled = true;
-            }
-            robot.OnHeardCrash(t);
-            Debug.Log("DistractionEvent: Fallback notification to robot complete.");
-        }
 
         var explosiveComp = t.GetComponent<ExpObj.ExplosiveObject>();
         if (explosiveComp != null)
         {
-            Debug.Log($"DistractionEvent: ExplosiveObject found on '{t.gameObject.name}', calling Explode().");
             explosiveComp.Explode();
         }
         else
         {
-            Debug.Log($"DistractionEvent: No ExplosiveObject on '{t.gameObject.name}', destroying GameObject.");
             Destroy(t.gameObject);
         }
     }
@@ -182,10 +151,8 @@ public class DistractionEvent : MonoBehaviour
         void OnCollisionEnter(Collision collision)
         {
             // If we collide with something at or below groundY, trigger immediately
-            Debug.Log($"ImpactNotifier: OnCollisionEnter detected collision with '{collision.gameObject.name}'. Current Y={transform.position.y}, groundY={groundY}.");
             if (transform.position.y <= groundY + 0.1f)
             {
-                Debug.Log("ImpactNotifier: Position at or below ground threshold, invoking onImpact.");
                 onImpact?.Invoke(transform);
                 Destroy(this);
             }
@@ -195,7 +162,6 @@ public class DistractionEvent : MonoBehaviour
         {
             if (transform.position.y <= groundY + 0.05f)
             {
-                Debug.Log($"ImpactNotifier: Update detected Y={transform.position.y} <= groundY+0.05 ({groundY + 0.05f}), invoking onImpact.");
                 onImpact?.Invoke(transform);
                 Destroy(this);
             }

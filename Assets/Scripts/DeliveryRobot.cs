@@ -1,12 +1,8 @@
 using System.Collections;
-using UnityEngine;
-using UnityEngine.AI;
-
-using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Text.RegularExpressions;
 
 public class DeliveryRobot : MonoBehaviour
 {
@@ -26,12 +22,27 @@ public class DeliveryRobot : MonoBehaviour
 
     private NavMeshAgent agent;
     private Transform currentTarget;
+    public RobotNavigator navigator;
+
+    // DeliveryRobot movement and rotation are controlled by its own NavMeshAgent and Update()
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
-        agent.updateRotation = false;
+        // Prefer a shared Navigator if present
+        if (navigator == null) navigator = GetComponent<RobotNavigator>();
+
+        if (navigator != null)
+        {
+            agent = navigator.agent;
+            // Navigator controls rotation
+            if (agent != null) agent.updateRotation = false;
+        }
+        else
+        {
+            agent = GetComponent<NavMeshAgent>();
+            if (agent != null) agent.updateRotation = false;
+        }
 
         // Auto-populate tables array with all GameObjects named WaypointTable<number>
         var allTables = GameObject.FindObjectsByType<Transform>(FindObjectsSortMode.None)
@@ -88,10 +99,12 @@ public class DeliveryRobot : MonoBehaviour
         }
         else
         {
-            // While moving, rotate towards velocity direction
-            if (agent.velocity.magnitude > 0.1f)
+            // While moving, rotate towards the agent's desired velocity direction (more stable than actual velocity)
+            var desired = agent.desiredVelocity;
+            var horiz = new Vector3(desired.x, 0f, desired.z);
+            if (horiz.magnitude > 0.1f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(agent.velocity.normalized);
+                Quaternion targetRotation = Quaternion.LookRotation(horiz.normalized);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, agent.angularSpeed * Time.deltaTime);
             }
         }
@@ -143,13 +156,19 @@ public class DeliveryRobot : MonoBehaviour
     private void GoToTable(int tableIndex)
     {
         currentTarget = tables[tableIndex];
-        agent.SetDestination(tables[tableIndex].position);
+        if (navigator != null)
+            navigator.MoveTo(tables[tableIndex].position, tables[tableIndex]);
+        else if (agent != null)
+            agent.SetDestination(tables[tableIndex].position);
     }
 
     // Call this to reset the robot
     public void GoToBar()
     {
         currentTarget = barPoint;
-        agent.SetDestination(barPoint.position);
+        if (navigator != null)
+            navigator.MoveTo(barPoint.position, barPoint);
+        else if (agent != null)
+            agent.SetDestination(barPoint.position);
     }
 }
