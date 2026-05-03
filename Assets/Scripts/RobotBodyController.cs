@@ -5,7 +5,8 @@ using UnityEngine;
 public class RobotBodyController : MonoBehaviour
 {
     [Header("Settings")]
-    public float jointSpeed = 45f; // degrees per second
+    public float revoluteJointSpeed = 45f; // degrees per second
+    public float linearJointSpeed = 1f; // metre per second
 
     [Header("Body/Head Links")]
     public ArticulationBody link_up_down_body;
@@ -13,6 +14,7 @@ public class RobotBodyController : MonoBehaviour
     public ArticulationBody link_yaw_head;
 
     private Coroutine _bodyRoutine;
+    public bool IsMoving { get; private set; }
 
     void Start()
     {
@@ -27,6 +29,7 @@ public class RobotBodyController : MonoBehaviour
     public void MoveBodyAndHead(float upDownAngle, float pitchAngle, float yawAngle, Action onComplete = null)
     {
         if (_bodyRoutine != null) StopCoroutine(_bodyRoutine);
+        IsMoving = true;
         _bodyRoutine = StartCoroutine(DriveBodyAndHead(upDownAngle, pitchAngle, yawAngle, onComplete));
     }
 
@@ -42,9 +45,18 @@ public class RobotBodyController : MonoBehaviour
             Mathf.Abs(yawAngle - startYaw)
         );
 
-        if (maxDelta < 0.01f) yield break;
+        if (maxDelta < 0.01f)
+        {
+            IsMoving = false; // Reset if skipping
+            onComplete?.Invoke();
+            yield break;
+        }
 
-        float duration = maxDelta / jointSpeed;
+        float durationUpDown = Mathf.Abs(upDownAngle - startUpDown) / linearJointSpeed;
+        float durationPitch = Mathf.Abs(pitchAngle - startPitch) / revoluteJointSpeed;
+        float durationYaw = Mathf.Abs(yawAngle - startYaw) / revoluteJointSpeed;
+
+        float duration = Mathf.Max(durationUpDown, durationPitch, durationYaw);
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -62,7 +74,9 @@ public class RobotBodyController : MonoBehaviour
         SetJointTarget(link_up_down_body, upDownAngle, true);
         SetJointTarget(link_pitch_body, pitchAngle);
         SetJointTarget(link_yaw_head, yawAngle);
-
+        
+        IsMoving = false;
+        _bodyRoutine = null;
         onComplete?.Invoke();
     }
 

@@ -36,6 +36,12 @@ public class RobotArmController : MonoBehaviour
     private Coroutine _leftArmRoutine;
     private Coroutine _rightArmRoutine;
 
+    private bool _isLeftMoving;
+    private bool _isRightMoving;
+
+    // Returns true if either arm is moving
+    public bool IsMoving => _isLeftMoving || _isRightMoving;
+
 
     void Awake()
     {
@@ -58,12 +64,20 @@ public class RobotArmController : MonoBehaviour
         if (side == ArmSide.Left)
         {
             if (_leftArmRoutine != null) StopCoroutine(_leftArmRoutine);
-            _leftArmRoutine = StartCoroutine(DriveArm(_leftArm, targetAngles, onComplete));
+            _isLeftMoving = true;
+            _leftArmRoutine = StartCoroutine(DriveArm(_leftArm, targetAngles, ()=> {
+                _isLeftMoving = false;
+                onComplete?.Invoke();
+            }));
         }
         else
         {
             if (_rightArmRoutine != null) StopCoroutine(_rightArmRoutine);
-            _rightArmRoutine = StartCoroutine(DriveArm(_rightArm, targetAngles, onComplete));
+            _isRightMoving = true;
+            _rightArmRoutine = StartCoroutine(DriveArm(_rightArm, targetAngles, () => {
+                _isRightMoving = false;
+                onComplete?.Invoke();
+            }));
         }
     }
 

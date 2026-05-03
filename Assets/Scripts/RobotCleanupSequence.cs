@@ -1,8 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Events;
 
 public class RobotCleanupSequence : MonoBehaviour
 {
@@ -20,18 +19,31 @@ public class RobotCleanupSequence : MonoBehaviour
     [Header("Locations")]
     public Transform operatorStandpoint;
     public Transform broomStorageLocation;
-    private Transform currentSpillLocation;
+    private Vector3 currentSpillPosition;
+    private Transform fragmentsTransform;
+    public float distanceOffsetFragment = 0.5f;
+    public float angleOffsetFragment = 0f;
 
     [Header("UI Prompt")]
     public GameObject cleanupApprovalUI;
 
     [Header("Cleaning Tools")]
-    public GameObject broomAndPanPrefab;
-    public Transform gripperSocket;
+    public GameObject broomPrefab;
+    public GameObject dustpanPrefab;
     public Transform dustpanCatchArea;
+    public Transform rightGripperSocket; // For the Broom
+    public Transform leftGripperSocket;  // For the Dustpan
+    public GameObject fakeGlassPile;
+
+    [Header("Articulation Controllers")]
+    public RobotBodyController robotBodyController;
+    public RobotArmController robotArmController;
 
     private bool isApproved = false;
     private bool mainLogicWasDisabled = false;
+
+    private float defaultTorsoHeight = 0.55f;
+    private float crouchTorsoHeight = 0.0f;
 
     void Start()
     {
@@ -39,7 +51,7 @@ public class RobotCleanupSequence : MonoBehaviour
         if (autoSubscribeToDistraction)
         {
             if (distractionEventReference == null)
-                distractionEventReference = FindObjectOfType<DistractionEvent>();
+                distractionEventReference = FindFirstObjectByType<DistractionEvent>();
 
             if (distractionEventReference != null)
                 distractionEventReference.onCrashOccurred.AddListener(OnHeardCrash);
@@ -60,13 +72,59 @@ public class RobotCleanupSequence : MonoBehaviour
     // Called by the UnityEvent in DistractionEvent.cs
     public void OnHeardCrash(Transform spillLocation)
     {
-        currentSpillLocation = spillLocation;
         if (spillLocation == null)
         {
             Debug.LogWarning("RobotCleanupSequence: Received null spillLocation in OnHeardCrash.");
             return;
         }
-        StartCoroutine(CleanupRoutine());
+
+        Vector3 forwardDir = spillLocation.forward;
+        forwardDir.y = 0;
+        if (forwardDir == Vector3.zero) forwardDir = Vector3.forward; // Fallback
+        forwardDir.Normalize();
+
+        Vector3 behindDir = -forwardDir;
+        Vector3 approachDirection = Quaternion.Euler(0, angleOffsetFragment, 0) * behindDir;
+
+        currentSpillPosition = spillLocation.position + (approachDirection * distanceOffsetFragment);
+        currentSpillPosition.y = spillLocation.position.y;
+
+        StartCoroutine(FindFragmentsAndCleanup());
+    }
+
+    private IEnumerator FindFragmentsAndCleanup()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        GameObject fragmentsObj = GameObject.Find("BottleFragments(Clone)");
+
+        Vector3 thingToLookAt = new Vector3();
+
+        if (fragmentsObj != null)
+        {
+            Debug.Log("RobotCleanupSequence: Found fragments, using their position for rotation.");
+            fragmentsTransform = fragmentsObj.transform;
+            thingToLookAt = fragmentsTransform.position;
+        }
+        else
+        {
+            Debug.LogWarning("RobotCleanupSequence: No fragments found.");
+        }
+
+        thingToLookAt.y = currentSpillPosition.y;
+
+        // Vector pointing from the robot's standing spot to the mess
+        Vector3 lookDirection = thingToLookAt - currentSpillPosition;
+        lookDirection.y = 0; // Double-checking it's flat
+
+        Quaternion finalRotation = Quaternion.LookRotation(lookDirection);
+
+        // Create a temporary object for the NavMeshAgent to align to
+        GameObject tempSpillTarget = new GameObject("TempSpillTarget");
+        tempSpillTarget.transform.position = currentSpillPosition;
+        tempSpillTarget.transform.rotation = finalRotation;
+
+        StartCoroutine(CleanupRoutine(tempSpillTarget));
     }
 
     // Called by the "Yes" Button on the VR Canvas
@@ -76,7 +134,7 @@ public class RobotCleanupSequence : MonoBehaviour
         if (cleanupApprovalUI != null) cleanupApprovalUI.SetActive(false);
     }
 
-    private IEnumerator CleanupRoutine()
+    private IEnumerator CleanupRoutine(GameObject tempSpillTarget)
     {
         // 1. Suspend normal operations
         mainLogicWasDisabled = false;
@@ -88,7 +146,25 @@ public class RobotCleanupSequence : MonoBehaviour
 
         // 2. Go to Operator
         if (operatorStandpoint != null)
-            yield return StartCoroutine(MoveToLocation(operatorStandpoint.position, operatorStandpoint));
+        {
+            Vector3 flatForward = operatorStandpoint.forward;
+            flatForward.y = 0;
+            flatForward.Normalize();
+
+            Vector3 targetPosition = operatorStandpoint.position + (flatForward * 1.0f);
+            Vector3 lookDirection = operatorStandpoint.position - targetPosition;
+            lookDirection.y = 0; // Keep the robot perfectly upright (by projecting onto the horizontal plane)
+
+            Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+
+            GameObject tempTarget = new GameObject("TempTarget");
+            tempTarget.transform.position = targetPosition;
+            tempTarget.transform.rotation = targetRotation;
+
+            yield return StartCoroutine(MoveToLocation(targetPosition, tempTarget.transform));
+
+            Destroy(tempTarget);
+        }
         else
         {
             Debug.LogWarning("RobotCleanupSequence: operatorStandpoint not assigned.");
@@ -102,24 +178,16 @@ public class RobotCleanupSequence : MonoBehaviour
 
         // 4. Fetch Tools
         if (broomStorageLocation != null)
-            yield return StartCoroutine(MoveToLocation(broomStorageLocation.position, broomStorageLocation));
+            yield return StartCoroutine(PickUpToolsRoutine());
         else
             Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned.");
-        
-        // Snap tools to gripper
-        if (broomAndPanPrefab != null && gripperSocket != null)
-        {
-            broomAndPanPrefab.transform.SetParent(gripperSocket, worldPositionStays: false);
-            broomAndPanPrefab.transform.localPosition = Vector3.zero;
-            broomAndPanPrefab.transform.localRotation = Quaternion.identity;
-        }
 
         // 5. Go to Spill
-        if (currentSpillLocation != null)
-            yield return StartCoroutine(MoveToLocation(currentSpillLocation.position, currentSpillLocation));
+        if (currentSpillPosition != null)
+            yield return StartCoroutine(MoveToLocation(currentSpillPosition, tempSpillTarget.transform));
         else
         {
-            Debug.LogWarning("RobotCleanupSequence: currentSpillLocation is null - aborting cleanup.");
+            Debug.LogWarning("RobotCleanupSequence: currentSpillPosition is null - aborting cleanup.");
             // Resume operations if possible
             if (mainRobotLogic != null && mainLogicWasDisabled)
             {
@@ -128,10 +196,13 @@ public class RobotCleanupSequence : MonoBehaviour
             yield break;
         }
 
+        Destroy(tempSpillTarget);
+
         // 6. Perform procedural cleaning motion & collect fragments
         yield return StartCoroutine(SweepAndCollect());
 
         // 7. Resume normal operations (or go to a trash can state)
+        // TODO: fix the normal operation resume logic
         if (mainRobotLogic != null && mainLogicWasDisabled)
             mainRobotLogic.enabled = true;
     }
@@ -185,64 +256,122 @@ public class RobotCleanupSequence : MonoBehaviour
         }
     }
 
+    private IEnumerator MoveBodyArm(float[] bodyPose, float[] leftArmPose, float[] rightArmPose)
+    {
+        if (robotBodyController != null)
+        {
+            robotBodyController.MoveBodyAndHead(bodyPose[0], bodyPose[1], bodyPose[2]);
+        }
+        else
+        {
+            Debug.LogWarning("RobotCleanupSequence: robotBodyController is not of type RobotBodyController - cannot perform body movement.");
+        }
+        if (robotArmController != null)
+        {
+            robotArmController.MoveBothArms(leftArmPose, rightArmPose);
+        }
+        else
+        {
+            Debug.LogWarning("RobotCleanupSequence: robotArmController is not of type RobotArmController - cannot perform arm movement.");
+        }
+
+        yield return null;
+
+        yield return new WaitUntil(() =>
+             (robotBodyController == null || !robotBodyController.IsMoving) &&
+             (robotArmController == null || !robotArmController.IsMoving)
+         );
+    }
+
+    private IEnumerator PickUpToolsRoutine()
+    {
+        yield return StartCoroutine(MoveToLocation(broomStorageLocation.position, broomStorageLocation));
+
+        float[] broomPose = { 10f, -90f, 0f, 85f, -10f, 0f, 0f };
+        float[] dustpanPose = { 10f, -90f, 0f, 60f, 10f, 0f, 0f };
+
+        Debug.Log("Robot: Bending down to reach tools...");
+        float[] pickBodyPose = { crouchTorsoHeight, 0f, 0f };
+        yield return StartCoroutine(MoveBodyArm(pickBodyPose, dustpanPose, broomPose));
+
+        // This happens ONLY after MoveBodyArm finishes
+        SnapToolsToGrippers();
+        Debug.Log("Robot: Tools secured.");
+
+        float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
+
+        Debug.Log("Robot: Standing back up...");
+        yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
+    }
+
+    private void SnapToolsToGrippers()
+    {
+        if (broomPrefab != null && rightGripperSocket != null)
+        {
+            broomPrefab.transform.SetParent(rightGripperSocket, false);
+            broomPrefab.transform.localPosition = Vector3.zero;
+            broomPrefab.transform.localRotation = Quaternion.identity;
+        }
+
+        if (dustpanPrefab != null && leftGripperSocket != null)
+        {
+            dustpanPrefab.transform.SetParent(leftGripperSocket, false);
+            dustpanPrefab.transform.localPosition = new Vector3(-0.033f, -0.04f, 0.085f);
+            dustpanPrefab.transform.localRotation = Quaternion.Euler(70f, 0f, 325f);
+        }
+    }
+
     private IEnumerator SweepAndCollect()
     {
-        // Procedural Animation: Bend forward
-        Quaternion startRot = transform.rotation;
-        Quaternion bendRot = startRot * Quaternion.Euler(30f, 0, 0); // Pitch forward 30 degrees
-        
-        float t = 0;
-        while (t < 1f)
+        Debug.Log("Robot: Beginning cleanup sequence...");
+
+        float[] dustpanRestingPose = { 0f, -90f, 0f, 80f, 20f, -20f, 0f };
+        float[] sweepStartPose = { 25f, -90f, 0f, 80f, -20f, 0f, 0f };
+        float[] sweepEndPose = { -10f, -80f, 0f, 100f, -10f, 0f, 0f };
+        float[] sweepBodyPose = { crouchTorsoHeight, 45f, 0f };
+
+        Debug.Log("Robot: Crouching to spill...");
+        yield return StartCoroutine(MoveBodyArm(sweepBodyPose, dustpanRestingPose, sweepStartPose));
+
+        int numberOfSweeps = 3;
+        for (int i = 0; i < numberOfSweeps; i++)
         {
-            t += Time.deltaTime;
-            transform.rotation = Quaternion.Slerp(startRot, bendRot, t);
-            yield return null;
+            Debug.Log($"Robot: Sweeping... ({i + 1}/{numberOfSweeps})");
+
+            yield return StartCoroutine(MoveBodyArm(sweepBodyPose, dustpanRestingPose, sweepEndPose));
+
+            yield return new WaitForSeconds(1.0f);
+
+            yield return StartCoroutine(MoveBodyArm(sweepBodyPose, dustpanRestingPose, sweepStartPose));
+
+            yield return new WaitForSeconds(1.0f);
         }
 
-        // Simulate brushing motion (simple delay for now, can add arm rotation here)
-        yield return new WaitForSeconds(1f);
+        Debug.Log("Robot: Swapping real fragments for fake pile...");
 
-        // Collect fragments: Find rigidbodies in a sphere around the spill
-        int collectedCount = 0;
-        if (currentSpillLocation != null)
+        if (fragmentsTransform != null)
         {
-            Collider[] hits = Physics.OverlapSphere(currentSpillLocation.position, 1.5f);
-            foreach (Collider col in hits)
-            {
-                Rigidbody rb = col.attachedRigidbody;
-                if (rb != null && col.gameObject != this.gameObject) // Don't suck up the robot itself
-                {
-                    // Disable physics on the fragments
-                    rb.isKinematic = true;
-                    rb.useGravity = false;
-                    
-                    // Teleport and parent them to the dustpan
-                    if (dustpanCatchArea != null)
-                    {
-                        col.transform.SetParent(dustpanCatchArea, worldPositionStays: false);
-                        // Add a little randomness to the pile
-                        Vector3 randomOffset = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(0f, 0.1f), Random.Range(-0.1f, 0.1f));
-                        col.transform.localPosition = randomOffset;
-                        collectedCount++;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"RobotCleanupSequence: dustpanCatchArea not assigned - cannot parent '{col.gameObject.name}'.");
-                    }
-                }
-            }
+            Destroy(fragmentsTransform.gameObject);
         }
-        Debug.Log($"RobotCleanupSequence: Collected {collectedCount} fragments into the dustpan.");
 
-        yield return new WaitForSeconds(1f);
-
-        // Stand back up
-        t = 0;
-        while (t < 1f)
+        // Turn on the fake visual glass pile sitting in the dustpan
+        if (fakeGlassPile != null)
         {
-            t += Time.deltaTime;
-            transform.rotation = Quaternion.Slerp(bendRot, startRot, t);
-            yield return null;
+            fakeGlassPile.SetActive(true);
         }
+        else
+        {
+            Debug.LogWarning("RobotCleanupSequence: fakeGlassPile is not assigned in the Inspector!");
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        Debug.Log("Robot: Standing back up...");
+        float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
+        yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
+
+        Debug.Log("Robot: Cleanup sequence complete.");
     }
 }
