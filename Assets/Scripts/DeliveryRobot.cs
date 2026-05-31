@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class DeliveryRobot : MonoBehaviour
 {
@@ -16,13 +17,26 @@ public class DeliveryRobot : MonoBehaviour
     [Header("Controllers")]
     [SerializeField] private RobotArmController armController;
     [SerializeField] private RobotBodyController bodyController;
+    [SerializeField] private GripperControl leftGripperControl;
+    [SerializeField] private GripperControl rightGripperControl;
+
+    [Header("Socket Interactors")]
+    [SerializeField] private XRSocketInteractor leftSocketInteractor;
+    [SerializeField] private XRSocketInteractor rightSocketInteractor;
 
     [Header("Arm Poses")]
     [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+    [SerializeField] private float[] placePose = { 20f, -90f, 0f, 85f, 0f, -20f, 0f };
+
+    [Header("Placement Settings")]
+    [SerializeField] private float placeDelay = 1f; // Delay before opening gripper to place tray
+    [SerializeField] private float bodyForwardPitch = -15f; // Forward bend angle (negative = forward)
 
     private NavMeshAgent agent;
     private Transform currentTarget;
     public RobotNavigator navigator;
+    private int? currentTableIndex;
+    private bool isAtDestination = false;
 
     // DeliveryRobot movement and rotation are controlled by its own NavMeshAgent and Update()
 
@@ -89,6 +103,18 @@ public class DeliveryRobot : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Check if robot has reached its destination
+        if (agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance && !isAtDestination)
+        {
+            isAtDestination = true;
+            
+            // If at a table, place tray and return to bar
+            if (currentTableIndex.HasValue)
+            {
+                StartCoroutine(PlaceTraysAndReturnToBar());
+            }
+        }
+
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             // Rotate towards target rotation
@@ -155,6 +181,8 @@ public class DeliveryRobot : MonoBehaviour
 
     private void GoToTable(int tableIndex)
     {
+        currentTableIndex = tableIndex;
+        isAtDestination = false;
         currentTarget = tables[tableIndex];
         if (navigator != null)
             navigator.MoveTo(tables[tableIndex].position, tables[tableIndex]);
@@ -162,9 +190,118 @@ public class DeliveryRobot : MonoBehaviour
             agent.SetDestination(tables[tableIndex].position);
     }
 
+    // Coroutine to place tray at table and return to bar
+    private IEnumerator PlaceTraysAndReturnToBar()
+    {
+        // Wait a brief moment before placing
+        yield return new WaitForSeconds(placeDelay);
+
+        // Move arms to place pose and body forward
+        bool armsReady = false;
+        bool bodyReady = false;
+        armController.MoveBothArms(placePose, placePose, () => armsReady = true);
+        bodyController.MoveBodyAndHead(0.55f, bodyForwardPitch, 0f, () => bodyReady = true);
+        yield return new WaitUntil(() => armsReady && bodyReady);
+
+        // Open both grippers to release tray
+        if (leftGripperControl != null)
+        {
+            leftGripperControl.OpenGripper();
+        }
+        if (rightGripperControl != null)
+        {
+            rightGripperControl.OpenGripper();
+        }
+
+        // Wait a moment for tray to settle on table before detaching
+        yield return new WaitForSeconds(placeDelay);
+
+        // Detach tray from socket interactors and disable socket interactors to prevent re-grabbing during placement
+        DisableSocketInteractors();
+        DetachTrayFromSockets();
+
+        // Retract arms back to carry pose to ensure tray is fully separated
+        bool armsReady2 = false;
+        armController.MoveBothArms(carryPose, carryPose, () => armsReady2 = true);
+        yield return new WaitUntil(() => armsReady2);
+
+        // Move body back to rest pose
+        bool bodyReady2 = false;
+        float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+        bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady2 = true);
+        yield return new WaitUntil(() => bodyReady2);
+
+        // Reset state and return to bar
+        currentTableIndex = null;
+        GoToBar();
+
+        // Wait for robot to return to bar before re-enabling sockets
+        yield return new WaitUntil(() => agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
+
+        // Re-enable socket interactors once safely back at bar
+        EnableSocketInteractors();
+    }
+
+    private void DisableSocketInteractors()
+    {
+        if (leftSocketInteractor != null)
+        {
+            leftSocketInteractor.enabled = false;
+            Debug.Log("Left socket interactor disabled.");
+        }
+
+        if (rightSocketInteractor != null)
+        {
+            rightSocketInteractor.enabled = false;
+            Debug.Log("Right socket interactor disabled.");
+        }
+    }
+
+    private void EnableSocketInteractors()
+    {
+        if (leftSocketInteractor != null)
+        {
+            leftSocketInteractor.enabled = true;
+            Debug.Log("Left socket interactor re-enabled.");
+        }
+
+        if (rightSocketInteractor != null)
+        {
+            rightSocketInteractor.enabled = true;
+            Debug.Log("Right socket interactor re-enabled.");
+        }
+    }
+
+    private void DetachTrayFromSockets()
+    {
+        // Detach from left socket if it has selected interactables
+        if (leftSocketInteractor != null && leftSocketInteractor.interactablesSelected.Count > 0)
+        {
+            var selectedInteractable = leftSocketInteractor.interactablesSelected[0];
+            if (selectedInteractable != null)
+            {
+                leftSocketInteractor.interactionManager.SelectExit(leftSocketInteractor, selectedInteractable);
+                Debug.Log("Detached tray from left socket.");
+            }
+        }
+
+        // Detach from right socket if it has selected interactables
+        if (rightSocketInteractor != null && rightSocketInteractor.interactablesSelected.Count > 0)
+        {
+            var selectedInteractable = rightSocketInteractor.interactablesSelected[0];
+            if (selectedInteractable != null)
+            {
+                rightSocketInteractor.interactionManager.SelectExit(rightSocketInteractor, selectedInteractable);
+                Debug.Log("Detached tray from right socket.");
+            }
+        }
+    }
+
     // Call this to reset the robot
     public void GoToBar()
     {
+        currentTableIndex = null;
+        isAtDestination = false;
         currentTarget = barPoint;
         if (navigator != null)
             navigator.MoveTo(barPoint.position, barPoint);
