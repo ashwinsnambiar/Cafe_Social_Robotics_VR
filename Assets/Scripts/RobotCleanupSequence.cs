@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -59,6 +58,9 @@ public class RobotCleanupSequence : MonoBehaviour
 
         if (navigator == null)
             navigator = GetComponent<RobotNavigator>();
+
+        if (mainRobotLogic == null)
+            mainRobotLogic = GetComponent<DeliveryRobot>();
     }
 
     void OnDestroy()
@@ -201,10 +203,20 @@ public class RobotCleanupSequence : MonoBehaviour
         // 6. Perform procedural cleaning motion & collect fragments
         yield return StartCoroutine(SweepAndCollect());
 
+        // 6.5 Return tools to storage
+        if (broomStorageLocation != null)
+            yield return StartCoroutine(ReturnToolsRoutine());
+        else
+            Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned; cannot return tools.");
+
         // 7. Resume normal operations (or go to a trash can state)
         // TODO: fix the normal operation resume logic
         if (mainRobotLogic != null && mainLogicWasDisabled)
+        {
             mainRobotLogic.enabled = true;
+            if (mainRobotLogic is DeliveryRobot deliveryRobot)
+                deliveryRobot.GoToBar();
+        }
     }
 
     private IEnumerator MoveToLocation(Vector3 destination)
@@ -305,6 +317,23 @@ public class RobotCleanupSequence : MonoBehaviour
         yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
     }
 
+    private IEnumerator ReturnToolsRoutine()
+    {
+        yield return StartCoroutine(MoveToLocation(broomStorageLocation.position, broomStorageLocation));
+
+        float[] broomPose = { 10f, -90f, 0f, 85f, -10f, 0f, 0f };
+        float[] dustpanPose = { 10f, -90f, 0f, 60f, 10f, 0f, 0f };
+
+        float[] pickBodyPose = { crouchTorsoHeight, 0f, 0f };
+        yield return StartCoroutine(MoveBodyArm(pickBodyPose, dustpanPose, broomPose));
+
+        DetachToolsToGround();
+
+        float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
+        yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
+    }
+
     private void SnapToolsToGrippers()
     {
         if (broomPrefab != null && rightGripperSocket != null)
@@ -320,6 +349,15 @@ public class RobotCleanupSequence : MonoBehaviour
             dustpanPrefab.transform.localPosition = new Vector3(-0.033f, -0.04f, 0.085f);
             dustpanPrefab.transform.localRotation = Quaternion.Euler(70f, 0f, 325f);
         }
+    }
+
+    private void DetachToolsToGround()
+    {
+        if (broomPrefab != null)
+            broomPrefab.transform.SetParent(null, true);
+
+        if (dustpanPrefab != null)
+            dustpanPrefab.transform.SetParent(null, true);
     }
 
     private IEnumerator SweepAndCollect()
