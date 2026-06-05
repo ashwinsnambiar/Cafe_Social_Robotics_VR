@@ -14,6 +14,12 @@ public class DeliveryRobot : MonoBehaviour
     [Header("UI Elements")]
     public GameObject tableSelectionCanvas; // Drag the popup Canvas here
 
+    public delegate void TraySecuredAction();
+    public event TraySecuredAction OnTraySecuredEvent;
+
+    public delegate void TableSelectedAction(int tableIndex);
+    public event TableSelectedAction OnTableSelectedEvent;
+
     [Header("Controllers")]
     [SerializeField] private RobotArmController armController;
     [SerializeField] private RobotBodyController bodyController;
@@ -74,7 +80,7 @@ public class DeliveryRobot : MonoBehaviour
 
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
 
-        StartCoroutine(InitAndGoToBar());
+        StartCoroutine(DeliveryLoop());
     }
 
     private int ParseTableIndex(string name)
@@ -86,18 +92,55 @@ public class DeliveryRobot : MonoBehaviour
         return -1;
     }
 
-    private IEnumerator InitAndGoToBar()
+    private IEnumerator DeliveryLoop()
     {
-        bool armsReady = false;
-        bool bodyReady = false;
+        while (true)
+        {
+            // Initialize arms and body to rest pose
+            bool armsReady = false;
+            bool bodyReady = false;
 
-        float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
-        armController.MoveBothArms(restPose, restPose, () => armsReady = true);
-        bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady = true);
+            float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+            armController.MoveBothArms(restPose, restPose, () => armsReady = true);
+            bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady = true);
 
-        yield return new WaitUntil(() => armsReady && bodyReady);
+            yield return new WaitUntil(() => armsReady && bodyReady);
 
-        GoToBar();
+            GoToBar();
+
+            // Wait until robot reaches bar
+            yield return new WaitUntil(() => agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
+
+            // Enable socket interactors so it can pick up a tray
+            EnableSocketInteractors();
+
+            // Wait until a tray is secured
+            bool traySecured = false;
+            void OnSecured() => traySecured = true;
+            OnTraySecuredEvent += OnSecured;
+
+            yield return new WaitUntil(() => traySecured);
+
+            OnTraySecuredEvent -= OnSecured;
+
+            // Wait until table is selected
+            bool tableSelected = false;
+            int selectedTable = -1;
+            void OnTableSelected(int idx)
+            {
+                tableSelected = true;
+                selectedTable = idx;
+            }
+            OnTableSelectedEvent += OnTableSelected;
+
+            yield return new WaitUntil(() => tableSelected);
+
+            OnTableSelectedEvent -= OnTableSelected;
+
+            // Move to table and place tray
+            yield return StartCoroutine(PrepareAndGoToTable(selectedTable));
+            yield return StartCoroutine(PlaceTraysAndReturnToBar());
+        }
     }
 
     // Update is called once per frame
@@ -139,6 +182,8 @@ public class DeliveryRobot : MonoBehaviour
     // Called by GripperSocketController once the tray is secured
     public void OnTraySecured()
     {
+        OnTraySecuredEvent?.Invoke();
+
         if (tableSelectionCanvas != null)
         {
             tableSelectionCanvas.SetActive(true);
@@ -164,6 +209,8 @@ public class DeliveryRobot : MonoBehaviour
             Debug.LogError("Invalid Table Index!");
             return;
         }
+
+        OnTableSelectedEvent?.Invoke(tableIndex);
 
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
 
