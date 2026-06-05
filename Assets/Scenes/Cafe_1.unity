@@ -2435,7 +2435,7 @@ GameObject:
   m_Component:
   - component: {fileID: 128547279}
   m_Layer: 0
-  m_Name: WaypointTable6StandLeft
+  m_Name: NPCWaypointTable6StandLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2881,7 +2881,7 @@ MonoBehaviour:
   leftGripperControl: {fileID: 187983976}
   rightGripperControl: {fileID: 43447163}
   leftSocketInteractor: {fileID: 453931272}
-  rightSocketInteractor: {fileID: 1153832630}
+  rightSocketInteractor: {fileID: 0}
   carryPose:
   - -45
   - -90
@@ -8581,7 +8581,7 @@ GameObject:
   m_Component:
   - component: {fileID: 474933064}
   m_Layer: 0
-  m_Name: WaypointTable5StandRight
+  m_Name: NPCWaypointTable5StandRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14555,7 +14555,7 @@ GameObject:
   m_Component:
   - component: {fileID: 776511369}
   m_Layer: 0
-  m_Name: WaypointTable5StandLeft
+  m_Name: NPCWaypointTable5StandLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15596,7 +15596,7 @@ GameObject:
   m_Component:
   - component: {fileID: 805570867}
   m_Layer: 0
-  m_Name: WaypointTable5SeatRight
+  m_Name: NPCWaypointTable5SeatRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17338,7 +17338,7 @@ GameObject:
   m_Component:
   - component: {fileID: 873339193}
   m_Layer: 0
-  m_Name: WaypointTable6SeatRight
+  m_Name: NPCWaypointTable6SeatRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20900,7 +20900,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1002693992}
   m_Layer: 0
-  m_Name: WaypointTable5SeatLeft
+  m_Name: NPCWaypointTable5SeatLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -23935,17 +23935,6 @@ Transform:
   - {fileID: 918673318}
   m_Father: {fileID: 726241939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1153832630 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2269405071935021304, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
-  m_PrefabInstance: {fileID: 2024049923}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60523e0647cc6ab43acc73cb266a32a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor
 --- !u!1001 &1161611939
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31061,7 +31050,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1489892032}
   m_Layer: 0
-  m_Name: WaypointTable6SeatLeft
+  m_Name: NPCWaypointTable6SeatLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -43010,7 +42999,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2146890061}
   m_Layer: 0
-  m_Name: WaypointTable6StandRight
+  m_Name: NPCWaypointTable6StandRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
