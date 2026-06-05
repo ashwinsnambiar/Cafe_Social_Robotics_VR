@@ -2717,6 +2717,7 @@ GameObject:
   - component: {fileID: 153516613}
   - component: {fileID: 153516610}
   - component: {fileID: 153516612}
+  - component: {fileID: 153516614}
   m_Layer: 6
   m_Name: Robot_Moving_Base
   m_TagString: Untagged
@@ -2927,9 +2928,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RobotCleanupSequence
   agent: {fileID: 153516609}
   navigator: {fileID: 0}
-  mainRobotLogic: {fileID: 153516610}
-  autoSubscribeToDistraction: 1
-  distractionEventReference: {fileID: 0}
   operatorStandpoint: {fileID: 1372205717}
   broomStorageLocation: {fileID: 1773721111}
   distanceOffsetFragment: 0.5
@@ -2937,7 +2935,6 @@ MonoBehaviour:
   cleanupApprovalUI: {fileID: 164665237}
   broomPrefab: {fileID: 499995622}
   dustpanPrefab: {fileID: 2463706537037108546}
-  dustpanCatchArea: {fileID: 1555199642}
   rightGripperSocket: {fileID: 1218087179}
   leftGripperSocket: {fileID: 1959837459}
   fakeGlassPile: {fileID: 1677884849758703117}
@@ -2960,6 +2957,21 @@ MonoBehaviour:
   onArrived:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &153516614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 153516603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a7a53a6fa519854b83e88fd2fd0be3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotTaskScheduler
+  deliveryModule: {fileID: 153516610}
+  cleanupModule: {fileID: 153516612}
+  distractionEvent: {fileID: 1290557456}
 --- !u!1 &164665237
 GameObject:
   m_ObjectHideFlags: 0

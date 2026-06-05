@@ -20,6 +20,11 @@ public class DeliveryRobot : MonoBehaviour
     public delegate void TableSelectedAction(int tableIndex);
     public event TableSelectedAction OnTableSelectedEvent;
 
+    public event System.Action OnDeliveryFinished;
+    public bool isActivelyDelivering { get; private set; } = false;
+    private bool deliveryEnabled = false;
+    private Coroutine deliveryRoutine;
+
     [Header("Controllers")]
     [SerializeField] private RobotArmController armController;
     [SerializeField] private RobotBodyController bodyController;
@@ -44,9 +49,11 @@ public class DeliveryRobot : MonoBehaviour
     private int? currentTableIndex;
     private bool isAtDestination = false;
 
-    // DeliveryRobot movement and rotation are controlled by its own NavMeshAgent and Update()
+    // Internal flags to handle UI events in the coroutine
+    private bool traySecuredThisCycle = false;
+    private bool tableSelectedThisCycle = false;
+    private int selectedTableThisCycle = -1;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         // Prefer a shared Navigator if present
@@ -80,22 +87,52 @@ public class DeliveryRobot : MonoBehaviour
 
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
 
-        StartCoroutine(DeliveryLoop());
+    }
+
+    // Task Scheduler Interface Methods
+    public void EnableDelivery()
+    {
+        if (!deliveryEnabled)
+        {
+            deliveryEnabled = true;
+            deliveryRoutine = StartCoroutine(DeliveryRoutine());
+        }
+    }
+
+    public void StopDeliverySafely()
+    {
+        deliveryEnabled = false;
+
+        // If the robot is just idling at the bar, stop immediately.
+        // If it is actively delivering, it will naturally end when the cycle finishes.
+        if (!isActivelyDelivering)
+        {
+            if (deliveryRoutine != null)
+            {
+                StopCoroutine(deliveryRoutine);
+                deliveryRoutine = null;
+            }
+            // Notify controller we have cleanly stopped
+            OnDeliveryFinished?.Invoke();
+        }
     }
 
     private int ParseTableIndex(string name)
     {
-        // Extracts the number from "WaypointTable<number>"
         var match = Regex.Match(name, @"WaypointTable(\d+)");
         if (match.Success && int.TryParse(match.Groups[1].Value, out int idx))
             return idx;
         return -1;
     }
 
-    private IEnumerator DeliveryLoop()
+    private IEnumerator DeliveryRoutine()
     {
-        while (true)
+        while (deliveryEnabled)
         {
+            isActivelyDelivering = false;
+            traySecuredThisCycle = false;
+            tableSelectedThisCycle = false;
+
             // Initialize arms and body to rest pose
             bool armsReady = false;
             bool bodyReady = false;
@@ -114,67 +151,65 @@ public class DeliveryRobot : MonoBehaviour
             // Enable socket interactors so it can pick up a tray
             EnableSocketInteractors();
 
-            // Wait until a tray is secured
-            bool traySecured = false;
-            void OnSecured() => traySecured = true;
+            // Wait until a tray is secured OR delivery is cancelled
+            void OnSecured() => traySecuredThisCycle = true;
             OnTraySecuredEvent += OnSecured;
 
-            yield return new WaitUntil(() => traySecured);
-
+            yield return new WaitUntil(() => traySecuredThisCycle || !deliveryEnabled);
             OnTraySecuredEvent -= OnSecured;
 
-            // Wait until table is selected
-            bool tableSelected = false;
-            int selectedTable = -1;
+            // If a spill happened while we were waiting at the bar, break out gracefully
+            if (!deliveryEnabled) break;
+
+            // We have a tray. We must finish this delivery regardless of spills.
+            isActivelyDelivering = true;
+
             void OnTableSelected(int idx)
             {
-                tableSelected = true;
-                selectedTable = idx;
+                tableSelectedThisCycle = true;
+                selectedTableThisCycle = idx;
             }
             OnTableSelectedEvent += OnTableSelected;
 
-            yield return new WaitUntil(() => tableSelected);
-
+            yield return new WaitUntil(() => tableSelectedThisCycle);
             OnTableSelectedEvent -= OnTableSelected;
 
-            // Move to table and place tray
-            yield return StartCoroutine(PrepareAndGoToTable(selectedTable));
+            yield return StartCoroutine(PrepareAndGoToTable(selectedTableThisCycle));
             yield return StartCoroutine(PlaceTraysAndReturnToBar());
+
+            // Delivery cycle complete
+            isActivelyDelivering = false;
+
+            // Notify the Controller that we finished a run so it can check for pending cleanup tasks
+            OnDeliveryFinished?.Invoke();
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // Check if robot has reached its destination
         if (agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance && !isAtDestination)
         {
             isAtDestination = true;
-            
-            // If at a table, place tray and return to bar
-            if (currentTableIndex.HasValue)
-            {
-                StartCoroutine(PlaceTraysAndReturnToBar());
-            }
         }
 
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        if (agent != null)
         {
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            {
             // Rotate towards target rotation
-            if (currentTarget != null)
-            {
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, currentTarget.rotation, agent.angularSpeed * Time.deltaTime);
+                if (currentTarget != null)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, currentTarget.rotation, agent.angularSpeed * Time.deltaTime);
             }
-        }
-        else
-        {
-            // While moving, rotate towards the agent's desired velocity direction (more stable than actual velocity)
-            var desired = agent.desiredVelocity;
-            var horiz = new Vector3(desired.x, 0f, desired.z);
-            if (horiz.magnitude > 0.1f)
+            else
             {
-                Quaternion targetRotation = Quaternion.LookRotation(horiz.normalized);
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, agent.angularSpeed * Time.deltaTime);
+            // While moving, rotate towards the agent's desired velocity direction (more stable than actual velocity)
+                var desired = agent.desiredVelocity;
+                var horiz = new Vector3(desired.x, 0f, desired.z);
+                if (horiz.magnitude > 0.1f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(horiz.normalized);
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, agent.angularSpeed * Time.deltaTime);
+                }
             }
         }
     }
@@ -213,8 +248,6 @@ public class DeliveryRobot : MonoBehaviour
         OnTableSelectedEvent?.Invoke(tableIndex);
 
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
-
-        StartCoroutine(PrepareAndGoToTable(tableIndex));
     }
 
     private IEnumerator PrepareAndGoToTable(int tableIndex)
@@ -224,6 +257,9 @@ public class DeliveryRobot : MonoBehaviour
         yield return new WaitUntil(() => armsReady);
 
         GoToTable(tableIndex);
+
+        // Wait until we actually reach the table
+        yield return new WaitUntil(() => agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
     }
 
     private void GoToTable(int tableIndex)
@@ -344,7 +380,6 @@ public class DeliveryRobot : MonoBehaviour
         }
     }
 
-    // Call this to reset the robot
     public void GoToBar()
     {
         currentTableIndex = null;

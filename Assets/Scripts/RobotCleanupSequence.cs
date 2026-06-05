@@ -7,13 +7,9 @@ public class RobotCleanupSequence : MonoBehaviour
     [Header("Core References")]
     public NavMeshAgent agent;
     public RobotNavigator navigator;
-    // Main robot logic that should be suspended during cleanup
-    public MonoBehaviour mainRobotLogic;
-    
-    [Header("Auto Subscription")]
-    [Tooltip("If true the robot will find a DistractionEvent in the scene and subscribe to its onCrashOccurred event at Start().")]
-    public bool autoSubscribeToDistraction = true;
-    public DistractionEvent distractionEventReference;
+
+
+    public event System.Action OnCleanupComplete;
 
     [Header("Locations")]
     public Transform operatorStandpoint;
@@ -29,7 +25,6 @@ public class RobotCleanupSequence : MonoBehaviour
     [Header("Cleaning Tools")]
     public GameObject broomPrefab;
     public GameObject dustpanPrefab;
-    public Transform dustpanCatchArea;
     public Transform rightGripperSocket; // For the Broom
     public Transform leftGripperSocket;  // For the Dustpan
     public GameObject fakeGlassPile;
@@ -39,7 +34,6 @@ public class RobotCleanupSequence : MonoBehaviour
     public RobotArmController robotArmController;
 
     private bool isApproved = false;
-    private bool mainLogicWasDisabled = false;
 
     private float defaultTorsoHeight = 0.55f;
     private float crouchTorsoHeight = 0.0f;
@@ -47,38 +41,16 @@ public class RobotCleanupSequence : MonoBehaviour
     void Start()
     {
         if (cleanupApprovalUI != null) cleanupApprovalUI.SetActive(false);
-        if (autoSubscribeToDistraction)
-        {
-            if (distractionEventReference == null)
-                distractionEventReference = FindFirstObjectByType<DistractionEvent>();
-
-            if (distractionEventReference != null)
-                distractionEventReference.onCrashOccurred.AddListener(OnHeardCrash);
-        }
 
         if (navigator == null)
             navigator = GetComponent<RobotNavigator>();
 
-        if (mainRobotLogic == null)
-            mainRobotLogic = GetComponent<DeliveryRobot>();
     }
 
-    void OnDestroy()
+    // Called by RobotTaskScheduler
+    public void StartCleanupSequence(Transform spillLocation)
     {
-        if (distractionEventReference != null)
-        {
-            distractionEventReference.onCrashOccurred.RemoveListener(OnHeardCrash);
-        }
-    }
-
-    // Called by the UnityEvent in DistractionEvent.cs
-    public void OnHeardCrash(Transform spillLocation)
-    {
-        if (spillLocation == null)
-        {
-            Debug.LogWarning("RobotCleanupSequence: Received null spillLocation in OnHeardCrash.");
-            return;
-        }
+        if (spillLocation == null) return;
 
         Vector3 forwardDir = spillLocation.forward;
         forwardDir.y = 0;
@@ -138,15 +110,8 @@ public class RobotCleanupSequence : MonoBehaviour
 
     private IEnumerator CleanupRoutine(GameObject tempSpillTarget)
     {
-        // 1. Suspend normal operations
-        mainLogicWasDisabled = false;
-        if (mainRobotLogic != null)
-        {
-            mainRobotLogic.enabled = false;
-            mainLogicWasDisabled = true;
-        }
 
-        // 2. Go to Operator
+        // 1. Go to Operator
         if (operatorStandpoint != null)
         {
             Vector3 flatForward = operatorStandpoint.forward;
@@ -172,51 +137,31 @@ public class RobotCleanupSequence : MonoBehaviour
             Debug.LogWarning("RobotCleanupSequence: operatorStandpoint not assigned.");
         }
 
-        // 3. Prompt VR User
+        // 2. Prompt VR User
         if (cleanupApprovalUI != null)
             cleanupApprovalUI.SetActive(true);
         isApproved = false;
         yield return new WaitUntil(() => isApproved == true);
 
-        // 4. Fetch Tools
+        // 3. Fetch Tools
         if (broomStorageLocation != null)
             yield return StartCoroutine(PickUpToolsRoutine());
-        else
-            Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned.");
 
-        // 5. Go to Spill
+        // 4. Go to Spill
         if (currentSpillPosition != null)
             yield return StartCoroutine(MoveToLocation(currentSpillPosition, tempSpillTarget.transform));
-        else
-        {
-            Debug.LogWarning("RobotCleanupSequence: currentSpillPosition is null - aborting cleanup.");
-            // Resume operations if possible
-            if (mainRobotLogic != null && mainLogicWasDisabled)
-            {
-                mainRobotLogic.enabled = true;
-            }
-            yield break;
-        }
 
         Destroy(tempSpillTarget);
 
-        // 6. Perform procedural cleaning motion & collect fragments
+        // 5. Sweep
         yield return StartCoroutine(SweepAndCollect());
 
-        // 6.5 Return tools to storage
+        // 6. Return tools
         if (broomStorageLocation != null)
             yield return StartCoroutine(ReturnToolsRoutine());
-        else
-            Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned; cannot return tools.");
 
-        // 7. Resume normal operations (or go to a trash can state)
-        // TODO: fix the normal operation resume logic
-        if (mainRobotLogic != null && mainLogicWasDisabled)
-        {
-            mainRobotLogic.enabled = true;
-            if (mainRobotLogic is DeliveryRobot deliveryRobot)
-                deliveryRobot.GoToBar();
-        }
+        // 7. Notify the Master Controller
+        OnCleanupComplete?.Invoke();
     }
 
     private IEnumerator MoveToLocation(Vector3 destination)
@@ -224,9 +169,7 @@ public class RobotCleanupSequence : MonoBehaviour
         // Prefer Navigator if present
         if (navigator != null)
         {
-            var move = StartCoroutine(navigator.MoveToAsync(destination));
-            // wait until navigator completes
-            yield return move;
+            yield return StartCoroutine(navigator.MoveToAsync(destination));
             yield break;
         }
 
@@ -302,18 +245,13 @@ public class RobotCleanupSequence : MonoBehaviour
         float[] broomPose = { 10f, -90f, 0f, 85f, -10f, 0f, 0f };
         float[] dustpanPose = { 10f, -90f, 0f, 60f, 10f, 0f, 0f };
 
-        Debug.Log("Robot: Bending down to reach tools...");
         float[] pickBodyPose = { crouchTorsoHeight, 0f, 0f };
         yield return StartCoroutine(MoveBodyArm(pickBodyPose, dustpanPose, broomPose));
 
-        // This happens ONLY after MoveBodyArm finishes
         SnapToolsToGrippers();
-        Debug.Log("Robot: Tools secured.");
 
         float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
         float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
-
-        Debug.Log("Robot: Standing back up...");
         yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
     }
 
