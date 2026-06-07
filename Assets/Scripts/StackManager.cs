@@ -179,7 +179,8 @@ public class StackManager : MonoBehaviour
                 continue;
             }
 
-            var shouldEnable = grabbedItems.Contains(item) || item == topItem;
+            var inStackArea = IsInStackArea(item.transform);
+            var shouldEnable = !inStackArea || grabbedItems.Contains(item) || item == topItem;
             if (item.enabled != shouldEnable)
             {
                 item.enabled = shouldEnable;
@@ -187,12 +188,12 @@ public class StackManager : MonoBehaviour
 
             if (disableSocketsForStackedItems)
             {
-                SetSocketState(item, grabbedItems.Contains(item));
+                SetSocketState(item, !inStackArea || grabbedItems.Contains(item));
             }
 
             if (manageRigidbodyKinematic)
             {
-                // When shouldEnable is true (top item or grabbed), make non-kinematic so it can be grabbed/moved.
+                // When shouldEnable is true (top item, grabbed, or outside stack), make non-kinematic so it can be grabbed/moved.
                 // All others are made kinematic to steady the stack.
                 SetRigidbodyKinematic(item, !shouldEnable);
             }
