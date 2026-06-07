@@ -18,6 +18,10 @@ This project uses the following third-party assets located in the `Assets/ThirdP
   - Downloaded from: https://assetstore.unity.com/packages/3d/props/exploding-objects-255996
 - **Dustpan with Brush**
   - Dowloaded from: https://free3d.io/model/Dustpan-with-brush/ca72c786
+- **Coffee Machine**
+  - Dowloaded from: https://www.cgtrader.com/free-3d-models/interior/kitchen/siemens-eq-6-coffee-machine by [Manadhion](https://www.cgtrader.com/designers/manadhion)
+- **Coffee Cups**
+  - Downloaded from: https://assetstore.unity.com/packages/3d/props/interior/cup-201601
 ## Robot Model
 - **Agibot G1 Robot**
   - Downloaded from: https://huggingface.co/datasets/agibot-world/GenieSimAssets
