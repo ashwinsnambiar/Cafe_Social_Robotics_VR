@@ -1,66 +1,28 @@
 using UnityEngine;
 
-[RequireComponent(typeof(LineRenderer))]
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 public class WaypointFloorMarker : MonoBehaviour
 {
-    public float radius = 0.45f;
+    public float radius = 0.5f;
     public float yOffset = 0.03f;
-    public int segments = 64;
-    public float lineWidth = 0.04f;
     public Color color = Color.green;
+    public string label = "";
 
-    private LineRenderer line;
-
-    private void Awake()
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
     {
-        line = GetComponent<LineRenderer>();
+        Vector3 pos = transform.position + Vector3.up * yOffset;
 
-        line.loop = true;
-        line.useWorldSpace = false;
-        line.positionCount = segments;
-        line.startWidth = lineWidth;
-        line.endWidth = lineWidth;
+        Handles.color = color;
+        Handles.DrawWireDisc(pos, Vector3.up, radius);
 
-        // Simple material so it is visible.
-        line.material = new Material(Shader.Find("Sprites/Default"));
-        line.startColor = color;
-        line.endColor = color;
-
-        DrawRing();
-    }
-
-    private void OnValidate()
-    {
-        if (line == null)
-            line = GetComponent<LineRenderer>();
-
-        if (line != null)
+        if (!string.IsNullOrEmpty(label))
         {
-            line.loop = true;
-            line.useWorldSpace = false;
-            line.positionCount = segments;
-            line.startWidth = lineWidth;
-            line.endWidth = lineWidth;
-            line.startColor = color;
-            line.endColor = color;
-
-            DrawRing();
+            Handles.Label(pos + Vector3.up * 0.15f, label);
         }
     }
-
-    private void DrawRing()
-    {
-        if (line == null)
-            return;
-
-        for (int i = 0; i < segments; i++)
-        {
-            float angle = ((float)i / segments) * Mathf.PI * 2f;
-
-            float x = Mathf.Cos(angle) * radius;
-            float z = Mathf.Sin(angle) * radius;
-
-            line.SetPosition(i, new Vector3(x, yOffset, z));
-        }
-    }
+#endif
 }
