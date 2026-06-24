@@ -43,6 +43,16 @@ public class DeliveryRobot : MonoBehaviour
     [SerializeField] private float placeDelay = 1f; // Delay before opening gripper to place tray
     [SerializeField] private float bodyForwardPitch = -15f; // Forward bend angle (negative = forward)
 
+    [Header("Operator Control")]
+    public RobotKeyboardOperator keyboardOperator;
+
+    [Header("Operator Mode")]
+    public bool operatorMode = true;
+
+    private bool operatorPickupArmed = false;
+    private bool operatorHasTray = false;
+    private Coroutine operatorDeliveryRoutine;
+
     private NavMeshAgent agent;
     private Transform currentTarget;
     public RobotNavigator navigator;
@@ -187,6 +197,10 @@ public class DeliveryRobot : MonoBehaviour
 
     void Update()
     {
+
+        if (operatorMode && !isActivelyDelivering)
+            return;
+
         if (agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance && !isAtDestination)
         {
             isAtDestination = true;
@@ -219,6 +233,30 @@ public class DeliveryRobot : MonoBehaviour
     {
         OnTraySecuredEvent?.Invoke();
 
+        if (operatorMode)
+        {
+            if (!operatorPickupArmed)
+            {
+                Debug.LogWarning("Tray secured, but operator pickup was not armed.");
+            }
+
+            operatorPickupArmed = false;
+            operatorHasTray = true;
+
+            if (tableSelectionCanvas != null)
+            {
+                tableSelectionCanvas.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("Table Selection Canvas is missing! Defaulting to Table 0.");
+                SelectTable(0);
+            }
+
+            return;
+        }
+
+        // Original automatic behavior
         if (tableSelectionCanvas != null)
         {
             tableSelectionCanvas.SetActive(true);
@@ -245,9 +283,48 @@ public class DeliveryRobot : MonoBehaviour
             return;
         }
 
-        OnTableSelectedEvent?.Invoke(tableIndex);
+        if (tableSelectionCanvas != null)
+            tableSelectionCanvas.SetActive(false);
 
-        if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
+        if (operatorMode)
+        {
+            if (!operatorHasTray)
+            {
+                Debug.LogWarning("Cannot select table: robot does not have a tray yet.");
+                return;
+            }
+
+            if (operatorDeliveryRoutine != null)
+                StopCoroutine(operatorDeliveryRoutine);
+
+            operatorDeliveryRoutine = StartCoroutine(OperatorDeliverToTable(tableIndex));
+            return;
+        }
+
+        // Original automatic coroutine behavior
+        OnTableSelectedEvent?.Invoke(tableIndex);
+    }
+
+    private IEnumerator OperatorDeliverToTable(int tableIndex)
+    {
+        if (keyboardOperator != null)
+            keyboardOperator.SetInputEnabled(false);
+
+        operatorHasTray = false;
+        isActivelyDelivering = true;
+
+        yield return StartCoroutine(PrepareAndGoToTable(tableIndex));
+        yield return StartCoroutine(PlaceTraysAndReturnToBar());
+
+        isActivelyDelivering = false;
+        operatorDeliveryRoutine = null;
+
+        if (keyboardOperator != null)
+            keyboardOperator.SetInputEnabled(true);
+
+        OnDeliveryFinished?.Invoke();
+
+        Debug.Log("Robot returned to bar. Operator control re-enabled.");
     }
 
     private IEnumerator PrepareAndGoToTable(int tableIndex)
@@ -390,4 +467,42 @@ public class DeliveryRobot : MonoBehaviour
         else if (agent != null)
             agent.SetDestination(barPoint.position);
     }
+
+    public void BeginOperatorPickup()
+    {
+        if (!operatorMode)
+            return;
+
+        if (isActivelyDelivering)
+            return;
+
+        if (operatorPickupArmed || operatorHasTray)
+            return;
+
+        operatorPickupArmed = true;
+
+        if (tableSelectionCanvas != null)
+            tableSelectionCanvas.SetActive(false);
+
+        StartCoroutine(OperatorPrepareForTrayRoutine());
+    }
+
+    private IEnumerator OperatorPrepareForTrayRoutine()
+    {
+        bool armsReady = false;
+        bool bodyReady = false;
+
+        float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+
+        armController.MoveBothArms(restPose, restPose, () => armsReady = true);
+        bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady = true);
+
+        yield return new WaitUntil(() => armsReady && bodyReady);
+
+        EnableSocketInteractors();
+
+        Debug.Log("Operator pickup armed. Waiting for tray.");
+    }
+
+
 }

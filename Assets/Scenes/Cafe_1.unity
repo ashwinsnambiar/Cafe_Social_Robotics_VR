@@ -2880,6 +2880,7 @@ GameObject:
   - component: {fileID: 153516612}
   - component: {fileID: 153516614}
   - component: {fileID: 153516615}
+  - component: {fileID: 153516616}
   m_Layer: 6
   m_Name: Robot_Moving_Base
   m_TagString: Untagged
@@ -3032,7 +3033,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 153516603}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3cfbc0102f8fd6946b869e6d99233ee2, type: 3}
   m_Name: 
@@ -3064,7 +3065,9 @@ MonoBehaviour:
   - 0
   placeDelay: 2
   bodyForwardPitch: 15
-  navigator: {fileID: 0}
+  keyboardOperator: {fileID: 153516615}
+  operatorMode: 1
+  navigator: {fileID: 153516613}
 --- !u!114 &153516611
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3110,7 +3113,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 153516603}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e188237e150af0742824c08196479585, type: 3}
   m_Name: 
@@ -3154,6 +3157,23 @@ MonoBehaviour:
   armController: {fileID: 1840841028}
   bodyController: {fileID: 1840841029}
   customSpeechInput: {fileID: 583738789}
+  inputEnabled: 1
+--- !u!114 &153516616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 153516603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868c86f6ade23514bb9c1abfe93b31d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OperatorWaypointArrivalTrigger
+  deliveryRobot: {fileID: 153516610}
+  pickupWaypoint: {fileID: 978046357}
+  triggerDistance: 0.6
+  resetDistance: 1
 --- !u!1 &158517480
 GameObject:
   m_ObjectHideFlags: 0
@@ -6275,8 +6295,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
-  m_fontSizeBase: 14
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -6292,7 +6312,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 3
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -8485,12 +8505,12 @@ MonoBehaviour:
   m_InputType: 0
   m_AsteriskChar: 42
   m_KeyboardType: 0
-  m_LineType: 0
+  m_LineType: 2
   m_HideMobileInput: 0
   m_HideSoftKeyboard: 0
   m_CharacterValidation: 0
   m_RegexValue: 
-  m_GlobalPointSize: 14
+  m_GlobalPointSize: 18
   m_CharacterLimit: 0
   m_OnEndEdit:
     m_PersistentCalls:
@@ -8552,7 +8572,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
+  m_SizeDelta: {x: 650, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &411335705
 MonoBehaviour:
@@ -27157,6 +27177,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 978046357}
+  - component: {fileID: 978046359}
+  - component: {fileID: 978046358}
   m_Layer: 0
   m_Name: WaypointCollectOrder
   m_TagString: Untagged
@@ -27179,6 +27201,204 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
+--- !u!114 &978046358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 978046356}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12de2e337b7d5d14a96978a1ef625e27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaypointFloorMarker
+  radius: 0.45
+  yOffset: 0.03
+  segments: 64
+  lineWidth: 0.04
+  color: {r: 0, g: 1, b: 0, a: 1}
+--- !u!120 &978046359
+LineRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 978046356}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Positions:
+  - {x: 0.45, y: 0.03, z: 0}
+  - {x: 0.44783312, y: 0.03, z: 0.044107713}
+  - {x: 0.44135335, y: 0.03, z: 0.087790646}
+  - {x: 0.43062314, y: 0.03, z: 0.1306281}
+  - {x: 0.41574576, y: 0.03, z: 0.17220755}
+  - {x: 0.39686453, y: 0.03, z: 0.21212853}
+  - {x: 0.3741613, y: 0.03, z: 0.25000662}
+  - {x: 0.34785467, y: 0.03, z: 0.28547698}
+  - {x: 0.31819803, y: 0.03, z: 0.31819803}
+  - {x: 0.28547695, y: 0.03, z: 0.34785467}
+  - {x: 0.2500066, y: 0.03, z: 0.37416133}
+  - {x: 0.21212849, y: 0.03, z: 0.39686456}
+  - {x: 0.17220753, y: 0.03, z: 0.41574576}
+  - {x: 0.13062808, y: 0.03, z: 0.43062314}
+  - {x: 0.0877906, y: 0.03, z: 0.44135338}
+  - {x: 0.04410771, y: 0.03, z: 0.44783312}
+  - {x: -0.000000019670125, y: 0.03, z: 0.45}
+  - {x: -0.04410775, y: 0.03, z: 0.44783312}
+  - {x: -0.087790646, y: 0.03, z: 0.44135335}
+  - {x: -0.13062812, y: 0.03, z: 0.4306231}
+  - {x: -0.17220758, y: 0.03, z: 0.41574576}
+  - {x: -0.21212856, y: 0.03, z: 0.39686453}
+  - {x: -0.25000665, y: 0.03, z: 0.37416127}
+  - {x: -0.28547695, y: 0.03, z: 0.3478547}
+  - {x: -0.31819803, y: 0.03, z: 0.31819803}
+  - {x: -0.3478547, y: 0.03, z: 0.28547695}
+  - {x: -0.37416133, y: 0.03, z: 0.2500066}
+  - {x: -0.3968646, y: 0.03, z: 0.21212848}
+  - {x: -0.41574582, y: 0.03, z: 0.17220747}
+  - {x: -0.43062314, y: 0.03, z: 0.13062812}
+  - {x: -0.44135338, y: 0.03, z: 0.08779064}
+  - {x: -0.44783312, y: 0.03, z: 0.04410769}
+  - {x: -0.45, y: 0.03, z: -0.00000003934025}
+  - {x: -0.44783312, y: 0.03, z: -0.04410777}
+  - {x: -0.44135335, y: 0.03, z: -0.08779072}
+  - {x: -0.4306231, y: 0.03, z: -0.13062818}
+  - {x: -0.41574576, y: 0.03, z: -0.17220753}
+  - {x: -0.39686453, y: 0.03, z: -0.21212855}
+  - {x: -0.37416127, y: 0.03, z: -0.25000662}
+  - {x: -0.34785464, y: 0.03, z: -0.285477}
+  - {x: -0.318198, y: 0.03, z: -0.31819808}
+  - {x: -0.28547698, y: 0.03, z: -0.34785467}
+  - {x: -0.2500065, y: 0.03, z: -0.3741614}
+  - {x: -0.2121285, y: 0.03, z: -0.39686456}
+  - {x: -0.1722074, y: 0.03, z: -0.41574585}
+  - {x: -0.13062803, y: 0.03, z: -0.43062314}
+  - {x: -0.08779067, y: 0.03, z: -0.44135335}
+  - {x: -0.04410762, y: 0.03, z: -0.44783312}
+  - {x: 0.000000005366196, y: 0.03, z: -0.45}
+  - {x: 0.044107843, y: 0.03, z: -0.44783312}
+  - {x: 0.08779068, y: 0.03, z: -0.44135335}
+  - {x: 0.13062826, y: 0.03, z: -0.43062308}
+  - {x: 0.17220762, y: 0.03, z: -0.41574574}
+  - {x: 0.21212852, y: 0.03, z: -0.39686456}
+  - {x: 0.25000668, y: 0.03, z: -0.37416124}
+  - {x: 0.28547698, y: 0.03, z: -0.34785467}
+  - {x: 0.31819814, y: 0.03, z: -0.31819794}
+  - {x: 0.34785473, y: 0.03, z: -0.28547692}
+  - {x: 0.3741613, y: 0.03, z: -0.25000662}
+  - {x: 0.3968646, y: 0.03, z: -0.21212843}
+  - {x: 0.4157458, y: 0.03, z: -0.17220753}
+  - {x: 0.43062317, y: 0.03, z: -0.13062797}
+  - {x: 0.44135338, y: 0.03, z: -0.0877906}
+  - {x: 0.44783315, y: 0.03, z: -0.044107545}
+  m_Parameters:
+    serializedVersion: 3
+    widthMultiplier: 1
+    widthCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.04
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 1
+        value: 0.04
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    colorGradient:
+      serializedVersion: 2
+      key0: {r: 0, g: 1, b: 0, a: 1}
+      key1: {r: 0, g: 1, b: 0, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 2
+    numCornerVertices: 0
+    numCapVertices: 0
+    alignment: 0
+    textureMode: 0
+    textureScale: {x: 1, y: 1}
+    shadowBias: 0.5
+    generateLightingData: 0
+  m_UseWorldSpace: 0
+  m_Loop: 1
+  m_ApplyActiveColorSpace: 1
 --- !u!1001 &978391319
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30610,10 +30830,10 @@ RectTransform:
   - {fileID: 411335704}
   m_Father: {fileID: 583738788}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -305}
+  m_SizeDelta: {x: 700, y: 220}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1139316300
 MonoBehaviour:
@@ -37207,8 +37427,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
-  m_fontSizeBase: 14
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
