@@ -19,11 +19,11 @@ public class OrderManager : MonoBehaviour
     // Preset order list
     private List<string> presetOrders = new List<string>
     {
-        "Burger - 1x\nCola - 1x",
-        "Burger - 2x\nCola - 2x",
-        "Croissant - 2x\nCoffee - 2x",
-        "Flatbread - 2x\nTea - 2x",
-        "Burger - 1x\nNuggets - 4x"
+        "Burger - 1x\nEspresso - 1x",
+        "Donut - 2x\nCappuccino - 1x",
+        "Croissant - 2x\nCappuccino - 1x",
+        "Flatbread - 2x\nWater - 1x",
+        "Schokobrotchen - 2x\nMilch - 1x"
         // Add more orders as needed
     };
     private int currentOrderIndex = 0;
