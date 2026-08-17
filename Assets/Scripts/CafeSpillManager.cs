@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem; // 1. Added the new Input System namespace
+using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 [System.Serializable]
 public class CoffeeTarget
@@ -24,14 +25,24 @@ public class CafeSpillManager : MonoBehaviour
 
     [Header("Trigger Settings")]
     [Tooltip("The keyboard key to trigger the spill")]
-    public Key triggerKey = Key.Space; // 2. Changed from KeyCode to Key
+    public Key triggerKey = Key.Space;
+
+    [Header("Robot Integration")]
+    [Tooltip("Fired after the spill is fully set up (cup + indicator spawned). Passes the spilled cup's Transform.")]
+    public UnityEvent<Transform> onSpillOccurred;
 
     private bool hasSpilled = false;
+    private bool isLocked = false;
+
+    /// <summary>The instantiated spilled cup object (set after TriggerRandomSpill).</summary>
+    public GameObject LastSpilledCupInstance { get; private set; }
+
+    /// <summary>The instantiated VR indicator / exclamation mark (set after TriggerRandomSpill).</summary>
+    public GameObject LastVrIndicatorInstance { get; private set; }
 
     void Update()
     {
-        // 3. Updated the input check for the New Input System
-        if (Keyboard.current != null && Keyboard.current[triggerKey].wasPressedThisFrame && !hasSpilled && availableCups.Count > 0)
+        if (Keyboard.current != null && Keyboard.current[triggerKey].wasPressedThisFrame && !hasSpilled && !isLocked && availableCups.Count > 0)
         {
             StartCoroutine(TriggerRandomSpill());
         }
@@ -54,7 +65,7 @@ public class CafeSpillManager : MonoBehaviour
         Quaternion spillRotation = selectedTarget.filledCup.transform.rotation;
 
         selectedTarget.filledCup.SetActive(false);
-        Instantiate(selectedTarget.spilledCupPrefab, spillPosition, spillRotation);
+        LastSpilledCupInstance = Instantiate(selectedTarget.spilledCupPrefab, spillPosition, spillRotation);
 
         if (spillSound != null)
         {
@@ -70,7 +81,16 @@ public class CafeSpillManager : MonoBehaviour
         if (vrIndicatorPrefab != null)
         {
             Vector3 indicatorPos = spillPosition + new Vector3(0, indicatorHeightOffset, 0);
-            Instantiate(vrIndicatorPrefab, indicatorPos, Quaternion.identity);
+            LastVrIndicatorInstance = Instantiate(vrIndicatorPrefab, indicatorPos, Quaternion.identity);
         }
+
+        // Notify robot system that a spill has occurred and is ready for cleanup
+        onSpillOccurred?.Invoke(LastSpilledCupInstance.transform);
     }
+
+    /// <summary>Prevents this spill event from being triggered (called by RobotTaskScheduler).</summary>
+    public void Lock() { isLocked = true; }
+
+    /// <summary>Re-enables this spill event after cleanup is complete.</summary>
+    public void Unlock() { isLocked = false; }
 }

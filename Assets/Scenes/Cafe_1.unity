@@ -2862,6 +2862,8 @@ MonoBehaviour:
   broomStorageLocation: {fileID: 1773721111}
   distanceOffsetFragment: 0.5
   angleOffsetFragment: 0
+  rotateToFaceSpill: 0
+  spillFacingAngleOffset: 0
   cleanupApprovalUI: {fileID: 164665237}
   broomPrefab: {fileID: 499995622}
   dustpanPrefab: {fileID: 2463706537037108546}
@@ -2870,6 +2872,8 @@ MonoBehaviour:
   fakeGlassPile: {fileID: 1677884849758703117}
   robotBodyController: {fileID: 1840841029}
   robotArmController: {fileID: 1840841028}
+  spilledCupDustpanOffset: {x: 0, y: 0, z: 0}
+  spilledCupDustpanRotation: {x: 0, y: 0, z: 0}
 --- !u!114 &153516613
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2901,7 +2905,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RobotTaskScheduler
   deliveryModule: {fileID: 153516610}
   cleanupModule: {fileID: 153516612}
-  distractionEvent: {fileID: 1290557456}
+  distractionEvents:
+  - {fileID: 1290557456}
+  spillManagers:
+  - {fileID: 1770892776}
+  cleanupDelay: 0
 --- !u!114 &153516615
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8157,7 +8165,7 @@ GameObject:
   m_Component:
   - component: {fileID: 474933064}
   m_Layer: 0
-  m_Name: NPCWaypointTable5StandRight
+  m_Name: NPCWaypointTable7StandRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8172,7 +8180,7 @@ Transform:
   m_GameObject: {fileID: 474933063}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.052, y: -0.50146174, z: 5.461469}
+  m_LocalPosition: {x: -4.0280004, y: -0.50146174, z: 5.461469}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13525,7 +13533,7 @@ GameObject:
   m_Component:
   - component: {fileID: 805570867}
   m_Layer: 0
-  m_Name: NPCWaypointTable5SeatRight
+  m_Name: NPCWaypointTable7SeatRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13540,7 +13548,7 @@ Transform:
   m_GameObject: {fileID: 805570866}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -8.223, y: 0.09853828, z: 5.875469}
+  m_LocalPosition: {x: -4.199, y: 0.09853828, z: 5.875469}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -19826,7 +19834,7 @@ GameObject:
   m_Component:
   - component: {fileID: 873339193}
   m_Layer: 0
-  m_Name: NPCWaypointTable6SeatRight
+  m_Name: NPCWaypointTable9SeatRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19841,7 +19849,7 @@ Transform:
   m_GameObject: {fileID: 873339192}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -6.333, y: 0.09853828, z: 5.875469}
+  m_LocalPosition: {x: 0.949, y: 0.09853828, z: 5.875469}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22219,8 +22227,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d30b611a1649e1f4abc55f399c9f5ed9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WalkToSitAnimation
-  waypoint_stand: {fileID: 2146890061}
-  waypoint_seat: {fileID: 873339193}
+  waypoint_stand: {fileID: 474933064}
+  waypoint_seat: {fileID: 805570867}
   IsSitting: 0
 --- !u!195 &984271001
 NavMeshAgent:
@@ -23950,7 +23958,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1770892775}
     m_Modifications:
     - target: {fileID: 2473006487723652469, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_Name
@@ -23962,15 +23970,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.093
+      value: -1.6318799
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.7966304
+      value: -0.42614782
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.439
+      value: 3.0603902
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -23978,7 +23986,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalRotation.y
@@ -23986,7 +23994,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -25551,7 +25559,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1770892775}
     m_Modifications:
     - target: {fileID: 1728788762639142823, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_Name
@@ -25563,15 +25571,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.32513335
+      value: -1.6697466
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.794
+      value: -0.42877817
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.444061
+      value: 3.065451
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalRotation.w
@@ -25579,7 +25587,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalRotation.y
@@ -25587,7 +25595,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -28252,6 +28260,11 @@ PrefabInstance:
 --- !u!1 &1342896779 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2473006487723652469, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
+  m_PrefabInstance: {fileID: 1066273069}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1342896783 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2961735646205538255, guid: de23e6acc39eaea48bd4f7b5539de66a, type: 3}
   m_PrefabInstance: {fileID: 1066273069}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1346101956
@@ -31914,8 +31927,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d30b611a1649e1f4abc55f399c9f5ed9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WalkToSitAnimation
-  waypoint_stand: {fileID: 474933064}
-  waypoint_seat: {fileID: 805570867}
+  waypoint_stand: {fileID: 2146890061}
+  waypoint_seat: {fileID: 873339193}
   IsSitting: 0
 --- !u!195 &1513135117
 NavMeshAgent:
@@ -32111,6 +32124,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abc00000000015001271376530823077, type: 3}
+--- !u!4 &1523608714 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5567106802000729052, guid: 4c7fc28d2b3e61444a7921976203a542, type: 3}
+  m_PrefabInstance: {fileID: 1177750636}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1523840783
 GameObject:
   m_ObjectHideFlags: 0
@@ -36489,7 +36507,9 @@ Transform:
   m_LocalPosition: {x: 1.99488, y: 1.2227782, z: 2.37861}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1342896783}
+  - {fileID: 1523608714}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1770892776
@@ -36512,6 +36532,9 @@ MonoBehaviour:
   spillSound: {fileID: 8300000, guid: d48ef317b6fdd3e4babb25ecdcfb588d, type: 3}
   npcShoutSound: {fileID: 8300000, guid: 07fb588845b7ace4eb0fd7478c29d51c, type: 3}
   triggerKey: 17
+  onSpillOccurred:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1773721110
 GameObject:
   m_ObjectHideFlags: 0
@@ -41167,6 +41190,10 @@ PrefabInstance:
       propertyPath: deliveryRobot
       value: 
       objectReference: {fileID: 153516610}
+    - target: {fileID: 8743854357539953548, guid: 2a755fa17646e0f40b8ed02f1bcaa025, type: 3}
+      propertyPath: m_InteractionLayers.m_Bits
+      value: 5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -42508,7 +42535,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2146890061}
   m_Layer: 0
-  m_Name: NPCWaypointTable6StandRight
+  m_Name: NPCWaypointTable9StandRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -42523,7 +42550,7 @@ Transform:
   m_GameObject: {fileID: 2146890060}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.0750003, y: -0.50146174, z: 5.461469}
+  m_LocalPosition: {x: 1.2069999, y: -0.50146174, z: 5.461469}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -48030,11 +48057,11 @@ SceneRoots:
   - {fileID: 1709072125}
   - {fileID: 1773721111}
   - {fileID: 776511369}
-  - {fileID: 474933064}
   - {fileID: 1002693992}
-  - {fileID: 805570867}
   - {fileID: 1489892032}
   - {fileID: 128547279}
+  - {fileID: 474933064}
+  - {fileID: 805570867}
   - {fileID: 2146890061}
   - {fileID: 873339193}
   - {fileID: 214655394}
@@ -48046,5 +48073,3 @@ SceneRoots:
   - {fileID: 233879969}
   - {fileID: 583738788}
   - {fileID: 1770892775}
-  - {fileID: 1066273069}
-  - {fileID: 1177750636}

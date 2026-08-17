@@ -108,6 +108,7 @@ public class DeliveryRobot : MonoBehaviour
         // If it is actively delivering, it will naturally end when the cycle finishes.
         if (!isActivelyDelivering)
         {
+            currentTarget = null;
             if (deliveryRoutine != null)
             {
                 StopCoroutine(deliveryRoutine);
@@ -180,6 +181,7 @@ public class DeliveryRobot : MonoBehaviour
 
             // Delivery cycle complete
             isActivelyDelivering = false;
+            currentTarget = null;
 
             // Notify the Controller that we finished a run so it can check for pending cleanup tasks
             OnDeliveryFinished?.Invoke();
@@ -188,6 +190,9 @@ public class DeliveryRobot : MonoBehaviour
 
     void Update()
     {
+        // Only drive navigation and orientation when delivery mode is actively running
+        if (!deliveryEnabled || !isActivelyDelivering) return;
+
         if (agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance && !isAtDestination)
         {
             isAtDestination = true;

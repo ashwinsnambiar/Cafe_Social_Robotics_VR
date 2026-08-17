@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class RobotTaskScheduler : MonoBehaviour
 {
@@ -6,92 +9,188 @@ public class RobotTaskScheduler : MonoBehaviour
     public DeliveryRobot deliveryModule;
     public RobotCleanupSequence cleanupModule;
 
-    [Header("Events")]
-    public DistractionEvent distractionEvent;
+    [Header("Distraction Events — Broken Bottles")]
+    [Tooltip("Assign every DistractionEvent instance in the scene.")]
+    public List<DistractionEvent> distractionEvents = new List<DistractionEvent>();
 
-    private bool pendingCleanup = false;
-    private Transform pendingSpillLocation;
+    [Header("Distraction Events — Coffee Spills")]
+    [Tooltip("Assign every CafeSpillManager instance in the scene.")]
+    public List<CafeSpillManager> spillManagers = new List<CafeSpillManager>();
+
+    [Header("Cleanup Settings")]
+    [Tooltip("Seconds to wait between event occurrence and the robot starting its cleanup response.")]
+    public float cleanupDelay = 5f;
+
+    // ── Internal state ──────────────────────────────────────────────
+    private CleanupTask pendingTask;
+    private bool isCleanupActive = false;
+
+    // Store delegates so we can properly unsubscribe in OnDestroy
+    private Dictionary<CafeSpillManager, UnityAction<Transform>> spillCallbacks
+        = new Dictionary<CafeSpillManager, UnityAction<Transform>>();
 
     void Start()
     {
-        // 1. Subscribe to the events
-        if (distractionEvent != null)
+        // Subscribe to every broken-bottle event
+        foreach (var de in distractionEvents)
         {
-            distractionEvent.onCrashOccurred.AddListener(OnSpillDetected);
+            if (de != null)
+                de.onCrashOccurred.AddListener(OnBottleCrashDetected);
+        }
+
+        // Subscribe to every coffee-spill event (capture manager via closure)
+        foreach (var sm in spillManagers)
+        {
+            if (sm != null)
+            {
+                var manager = sm; // closure capture
+                UnityAction<Transform> callback = (t) => OnCoffeeSpillDetected(t, manager);
+                spillCallbacks[manager] = callback;
+                sm.onSpillOccurred.AddListener(callback);
+            }
         }
 
         // Listen for when modules finish their tasks
         deliveryModule.OnDeliveryFinished += CheckPendingTasks;
-        cleanupModule.OnCleanupComplete += ResumeDelivery;
+        cleanupModule.OnCleanupComplete += OnCleanupFinished;
 
-        // 2. Start normal cafe operations
+        // Start normal café operations
         deliveryModule.EnableDelivery();
     }
 
     void OnDestroy()
     {
-        if (distractionEvent != null)
+        foreach (var de in distractionEvents)
         {
-            distractionEvent.onCrashOccurred.RemoveListener(OnSpillDetected);
+            if (de != null)
+                de.onCrashOccurred.RemoveListener(OnBottleCrashDetected);
         }
-        deliveryModule.OnDeliveryFinished -= CheckPendingTasks;
-        cleanupModule.OnCleanupComplete -= ResumeDelivery;
+
+        foreach (var kvp in spillCallbacks)
+        {
+            if (kvp.Key != null)
+                kvp.Key.onSpillOccurred.RemoveListener(kvp.Value);
+        }
+        spillCallbacks.Clear();
+
+        if (deliveryModule != null)
+            deliveryModule.OnDeliveryFinished -= CheckPendingTasks;
+        if (cleanupModule != null)
+            cleanupModule.OnCleanupComplete -= OnCleanupFinished;
     }
 
-    // Triggered by DistractionEvent.cs
-    public void OnSpillDetected(Transform spillLocation)
-    {
-        Debug.Log("Spill detected! Queuing cleanup task.");
-        if (spillLocation != null)
-        {
-            // Create a temporary, lightweight dummy GameObject to preserve the position and rotation
-            // before the original spillLocation transform is destroyed.
-            GameObject dummy = new GameObject("PendingSpillLocationDummy");
-            dummy.transform.position = spillLocation.position;
-            dummy.transform.rotation = spillLocation.rotation;
-            pendingSpillLocation = dummy.transform;
-        }
-        pendingCleanup = true;
+    // ── Lock / Unlock all distraction triggers ──────────────────────
 
-        // Tell the delivery module to stop taking new orders.
-        // If it is actively delivering, it will finish its current order first.
+    private void LockAllEvents()
+    {
+        foreach (var de in distractionEvents)
+            if (de != null) de.Lock();
+        foreach (var sm in spillManagers)
+            if (sm != null) sm.Lock();
+    }
+
+    private void UnlockAllEvents()
+    {
+        foreach (var de in distractionEvents)
+            if (de != null) de.Unlock();
+        foreach (var sm in spillManagers)
+            if (sm != null) sm.Unlock();
+    }
+
+    // ── Event handlers ──────────────────────────────────────────────
+
+    /// <summary>Triggered by any DistractionEvent.onCrashOccurred.</summary>
+    public void OnBottleCrashDetected(Transform crashLocation)
+    {
+        if (isCleanupActive)
+        {
+            Debug.LogWarning("RobotTaskScheduler: Ignoring bottle crash — a cleanup is already active.");
+            return;
+        }
+
+        Debug.Log("[RobotTaskScheduler] Broken bottle detected! Queuing cleanup.");
+        isCleanupActive = true;
+        LockAllEvents();
+
+        pendingTask = new CleanupTask
+        {
+            Type = CleanupType.BrokenBottle,
+            Position = crashLocation.position,
+            Rotation = crashLocation.rotation
+        };
+
+        // Stop delivery; when it finishes, CheckPendingTasks will fire
         deliveryModule.StopDeliverySafely();
     }
 
-    // Called automatically by DeliveryRobot when it finishes an order (or if it was idling)
+    /// <summary>Triggered by any CafeSpillManager.onSpillOccurred.</summary>
+    public void OnCoffeeSpillDetected(Transform spillLocation, CafeSpillManager manager)
+    {
+        if (isCleanupActive)
+        {
+            Debug.LogWarning("RobotTaskScheduler: Ignoring coffee spill — a cleanup is already active.");
+            return;
+        }
+
+        Debug.Log("[RobotTaskScheduler] Coffee spill detected! Queuing cleanup.");
+        isCleanupActive = true;
+        LockAllEvents();
+
+        pendingTask = new CleanupTask
+        {
+            Type = CleanupType.SpilledCoffee,
+            Position = spillLocation.position,
+            Rotation = spillLocation.rotation,
+            SpilledCupInstance = manager.LastSpilledCupInstance,
+            VrIndicatorInstance = manager.LastVrIndicatorInstance
+        };
+
+        // Stop delivery; when it finishes, CheckPendingTasks will fire
+        deliveryModule.StopDeliverySafely();
+    }
+
+    // ── Task flow ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Called automatically by DeliveryRobot when it finishes its current order (or was idling).
+    /// Waits the configured delay, then starts cleanup.
+    /// </summary>
     private void CheckPendingTasks()
     {
-        if (pendingCleanup)
+        if (pendingTask != null)
         {
-            Debug.Log("Delivery finished. Starting cleanup sequence.");
-            cleanupModule.StartCleanupSequence(pendingSpillLocation);
-
-            // Clean up the dummy GameObject now that its position has been read
-            if (pendingSpillLocation != null && pendingSpillLocation.name == "PendingSpillLocationDummy")
-            {
-                Destroy(pendingSpillLocation.gameObject);
-                pendingSpillLocation = null;
-            }
+            Debug.Log($"Delivery stopped. Waiting {cleanupDelay}s before starting cleanup...");
+            StartCoroutine(DelayedCleanupStart());
         }
         else
         {
-            // If nothing is pending, keep taking delivery orders
+            // Nothing pending — keep taking delivery orders
             deliveryModule.EnableDelivery();
         }
     }
 
-    // Called automatically by RobotCleanupSequence when the mess is gone
-    private void ResumeDelivery()
+    private IEnumerator DelayedCleanupStart()
     {
-        Debug.Log("Cleanup complete. Resuming delivery operations.");
-        pendingCleanup = false;
-        
-        if (pendingSpillLocation != null && pendingSpillLocation.name == "PendingSpillLocationDummy")
-        {
-            Destroy(pendingSpillLocation.gameObject);
-        }
-        pendingSpillLocation = null;
+        yield return new WaitForSeconds(cleanupDelay);
 
+        if (pendingTask != null)
+        {
+            Debug.Log("Starting cleanup sequence now.");
+            CleanupTask task = pendingTask;
+            pendingTask = null;
+            cleanupModule.StartCleanupSequence(task);
+        }
+    }
+
+    /// <summary>
+    /// Called automatically by RobotCleanupSequence when the mess is cleaned.
+    /// Unlocks all events and resumes delivery.
+    /// </summary>
+    private void OnCleanupFinished()
+    {
+        Debug.Log("Cleanup complete. Unlocking events and resuming delivery.");
+        isCleanupActive = false;
+        UnlockAllEvents();
         deliveryModule.EnableDelivery();
     }
 }

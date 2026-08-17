@@ -54,4 +54,25 @@ public class SpilledCupController : MonoBehaviour
         // Snap to the exact target size at the very end to prevent floating point errors
         puddleDecal.size = targetPuddleSize;
     }
+
+    /// <summary>
+    /// Called by RobotCleanupSequence to stop all visual effects during cleanup.
+    /// Stops the particle stream and hides the puddle decal.
+    /// </summary>
+    public void Cleanup()
+    {
+        StopAllCoroutines();
+
+        if (particleStream != null)
+        {
+            particleStream.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particleStream.gameObject.SetActive(false);
+        }
+
+        if (puddleDecal != null)
+        {
+            puddleDecal.size = Vector3.zero;
+            puddleDecal.gameObject.SetActive(false);
+        }
+    }
 }

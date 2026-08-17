@@ -19,6 +19,13 @@ public class RobotCleanupSequence : MonoBehaviour
     public float distanceOffsetFragment = 0.5f;
     public float angleOffsetFragment = 0f;
 
+    [Header("Spill Arrival Orientation")]
+    [Tooltip("If true, rotates the robot to face the spill upon arrival. If false, the robot stays facing the direction in which it travelled.")]
+    public bool rotateToFaceSpill = false;
+
+    [Tooltip("Additional Y-axis rotation offset (in degrees) when facing the spill. E.g. set 180 to face 180 degrees opposite.")]
+    public float spillFacingAngleOffset = 0f;
+
     [Header("UI Prompt")]
     public GameObject cleanupApprovalUI;
 
@@ -33,10 +40,22 @@ public class RobotCleanupSequence : MonoBehaviour
     public RobotBodyController robotBodyController;
     public RobotArmController robotArmController;
 
+    [Header("Coffee Spill — Cup Placement on Dustpan")]
+    [Tooltip("Local position offset for the spilled cup when placed on the dustpan.")]
+    public Vector3 spilledCupDustpanOffset = Vector3.zero;
+
+    [Tooltip("Local rotation (Euler angles) for the spilled cup when placed on the dustpan.")]
+    public Vector3 spilledCupDustpanRotation = Vector3.zero;
+
     private bool isApproved = false;
 
     private float defaultTorsoHeight = 0.55f;
     private float crouchTorsoHeight = 0.0f;
+
+    // Current cleanup task state
+    private CleanupTask currentTask;
+    private GameObject spilledCupInstance;
+    private GameObject vrIndicatorInstance;
 
     void Start()
     {
@@ -47,58 +66,72 @@ public class RobotCleanupSequence : MonoBehaviour
 
     }
 
-    // Called by RobotTaskScheduler
-    public void StartCleanupSequence(Transform spillLocation)
+    /// <summary>
+    /// Entry point called by RobotTaskScheduler with a typed CleanupTask.
+    /// </summary>
+    public void StartCleanupSequence(CleanupTask task)
     {
-        if (spillLocation == null) return;
+        if (task == null) return;
 
-        Vector3 forwardDir = spillLocation.forward;
+        currentTask = task;
+
+        // Calculate approach position from the event location
+        Vector3 forwardDir = task.Rotation * Vector3.forward;
         forwardDir.y = 0;
-        if (forwardDir == Vector3.zero) forwardDir = Vector3.forward; // Fallback
+        if (forwardDir == Vector3.zero) forwardDir = Vector3.forward;
         forwardDir.Normalize();
 
         Vector3 behindDir = -forwardDir;
         Vector3 approachDirection = Quaternion.Euler(0, angleOffsetFragment, 0) * behindDir;
 
-        currentSpillPosition = spillLocation.position + (approachDirection * distanceOffsetFragment);
-        currentSpillPosition.y = spillLocation.position.y;
+        currentSpillPosition = task.Position + (approachDirection * distanceOffsetFragment);
+        currentSpillPosition.y = task.Position.y;
 
-        StartCoroutine(FindFragmentsAndCleanup());
+        StartCoroutine(PrepareAndCleanup());
     }
 
-    private IEnumerator FindFragmentsAndCleanup()
+    /// <summary>
+    /// Legacy overload — wraps the Transform into a BrokenBottle CleanupTask.
+    /// </summary>
+    public void StartCleanupSequence(Transform spillLocation)
+    {
+        if (spillLocation == null) return;
+
+        var task = new CleanupTask
+        {
+            Type = CleanupType.BrokenBottle,
+            Position = spillLocation.position,
+            Rotation = spillLocation.rotation
+        };
+        StartCleanupSequence(task);
+    }
+
+    private IEnumerator PrepareAndCleanup()
     {
         yield return new WaitForSeconds(0.5f);
 
-        GameObject fragmentsObj = GameObject.Find("BottleFragments(Clone)");
-
-        Vector3 thingToLookAt = new Vector3();
-
-        if (fragmentsObj != null)
+        if (currentTask.Type == CleanupType.BrokenBottle)
         {
-            Debug.Log("RobotCleanupSequence: Found fragments, using their position for rotation.");
-            fragmentsTransform = fragmentsObj.transform;
-            thingToLookAt = fragmentsTransform.position;
+            GameObject fragmentsObj = GameObject.Find("BottleFragments(Clone)");
+            if (fragmentsObj != null)
+            {
+                Debug.Log("RobotCleanupSequence: Found fragments.");
+                fragmentsTransform = fragmentsObj.transform;
+            }
+            else
+            {
+                Debug.LogWarning("RobotCleanupSequence: No fragments found.");
+                fragmentsTransform = null;
+            }
         }
-        else
+        else // SpilledCoffee
         {
-            Debug.LogWarning("RobotCleanupSequence: No fragments found.");
+            spilledCupInstance = currentTask.SpilledCupInstance;
+            vrIndicatorInstance = currentTask.VrIndicatorInstance;
+            Debug.Log("RobotCleanupSequence: Coffee spill cleanup prepared.");
         }
 
-        thingToLookAt.y = currentSpillPosition.y;
-
-        // Vector pointing from the robot's standing spot to the mess
-        Vector3 lookDirection = thingToLookAt - currentSpillPosition;
-        lookDirection.y = 0; // Double-checking it's flat
-
-        Quaternion finalRotation = Quaternion.LookRotation(lookDirection);
-
-        // Create a temporary object for the NavMeshAgent to align to
-        GameObject tempSpillTarget = new GameObject("TempSpillTarget");
-        tempSpillTarget.transform.position = currentSpillPosition;
-        tempSpillTarget.transform.rotation = finalRotation;
-
-        StartCoroutine(CleanupRoutine(tempSpillTarget));
+        StartCoroutine(CleanupRoutine());
     }
 
     // Called by the "Yes" Button on the VR Canvas
@@ -108,7 +141,7 @@ public class RobotCleanupSequence : MonoBehaviour
         if (cleanupApprovalUI != null) cleanupApprovalUI.SetActive(false);
     }
 
-    private IEnumerator CleanupRoutine(GameObject tempSpillTarget)
+    private IEnumerator CleanupRoutine()
     {
 
         // 1. Go to Operator
@@ -120,7 +153,7 @@ public class RobotCleanupSequence : MonoBehaviour
 
             Vector3 targetPosition = operatorStandpoint.position + (flatForward * 1.0f);
             Vector3 lookDirection = operatorStandpoint.position - targetPosition;
-            lookDirection.y = 0; // Keep the robot perfectly upright (by projecting onto the horizontal plane)
+            lookDirection.y = 0;
 
             Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
 
@@ -148,15 +181,50 @@ public class RobotCleanupSequence : MonoBehaviour
             yield return StartCoroutine(PickUpToolsRoutine());
 
         // 4. Go to Spill
-        if (currentSpillPosition != null)
-            yield return StartCoroutine(MoveToLocation(currentSpillPosition, tempSpillTarget.transform));
+        if (rotateToFaceSpill && currentTask != null)
+        {
+            Vector3 lookDirection = currentTask.Position - currentSpillPosition;
+            lookDirection.y = 0;
+            if (lookDirection == Vector3.zero)
+            {
+                lookDirection = currentTask.Rotation * Vector3.forward;
+                lookDirection.y = 0;
+            }
 
-        Destroy(tempSpillTarget);
+            if (lookDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection) * Quaternion.Euler(0, spillFacingAngleOffset, 0);
+                GameObject tempSpillTarget = new GameObject("TempSpillTarget");
+                tempSpillTarget.transform.position = currentSpillPosition;
+                tempSpillTarget.transform.rotation = targetRotation;
 
-        // 5. Sweep
-        yield return StartCoroutine(SweepAndCollect());
+                yield return StartCoroutine(MoveToLocation(currentSpillPosition, tempSpillTarget.transform));
+                Destroy(tempSpillTarget);
+            }
+            else
+            {
+                yield return StartCoroutine(MoveToLocation(currentSpillPosition));
+            }
+        }
+        else
+        {
+            // By default, stay in the same direction in which the robot travelled (no final rotation)
+            yield return StartCoroutine(MoveToLocation(currentSpillPosition));
+        }
 
-        // 6. Return tools
+        // 5. Sweep and collect — dispatch by cleanup type
+        if (currentTask.Type == CleanupType.BrokenBottle)
+        {
+            yield return StartCoroutine(SweepFloorAndCollect());
+        }
+        else
+        {
+            // Floor sweep first (cleans the puddle area), then grab cup off the table
+            yield return StartCoroutine(SweepFloorForSpill());
+            yield return StartCoroutine(GrabCupFromTable());
+        }
+
+        // 6. Return tools (also detaches spilled cup if attached)
         if (broomStorageLocation != null)
             yield return StartCoroutine(ReturnToolsRoutine());
 
@@ -296,18 +364,27 @@ public class RobotCleanupSequence : MonoBehaviour
 
         if (dustpanPrefab != null)
             dustpanPrefab.transform.SetParent(null, true);
+
+        // Also detach the spilled cup if it was collected during coffee cleanup
+        if (spilledCupInstance != null && spilledCupInstance.transform.parent != null)
+        {
+            spilledCupInstance.transform.SetParent(null, true);
+            spilledCupInstance = null;
+        }
     }
 
-    private IEnumerator SweepAndCollect()
-    {
-        Debug.Log("Robot: Beginning cleanup sequence...");
+    // ────────────────────────────────────────────────────────────────
+    //  Shared sweep motion (used by both cleanup types)
+    // ────────────────────────────────────────────────────────────────
 
+    private IEnumerator PerformFloorSweepMotion()
+    {
         float[] dustpanRestingPose = { 0f, -90f, 0f, 80f, 20f, -20f, 0f };
         float[] sweepStartPose = { 25f, -90f, 0f, 80f, -20f, 0f, 0f };
         float[] sweepEndPose = { -10f, -80f, 0f, 100f, -10f, 0f, 0f };
         float[] sweepBodyPose = { crouchTorsoHeight, 45f, 0f };
 
-        Debug.Log("Robot: Crouching to spill...");
+        Debug.Log("Robot: Crouching to sweep...");
         yield return StartCoroutine(MoveBodyArm(sweepBodyPose, dustpanRestingPose, sweepStartPose));
 
         int numberOfSweeps = 3;
@@ -316,13 +393,22 @@ public class RobotCleanupSequence : MonoBehaviour
             Debug.Log($"Robot: Sweeping... ({i + 1}/{numberOfSweeps})");
 
             yield return StartCoroutine(MoveBodyArm(sweepBodyPose, dustpanRestingPose, sweepEndPose));
-
             yield return new WaitForSeconds(1.0f);
 
             yield return StartCoroutine(MoveBodyArm(sweepBodyPose, dustpanRestingPose, sweepStartPose));
-
             yield return new WaitForSeconds(1.0f);
         }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  BROKEN BOTTLE — floor sweep + collect fragments
+    // ────────────────────────────────────────────────────────────────
+
+    private IEnumerator SweepFloorAndCollect()
+    {
+        Debug.Log("Robot: Beginning floor cleanup sequence (broken bottle)...");
+
+        yield return StartCoroutine(PerformFloorSweepMotion());
 
         Debug.Log("Robot: Swapping real fragments for fake pile...");
 
@@ -348,6 +434,77 @@ public class RobotCleanupSequence : MonoBehaviour
         float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
         yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
 
-        Debug.Log("Robot: Cleanup sequence complete.");
+        Debug.Log("Robot: Floor cleanup sequence complete.");
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  SPILLED COFFEE — floor sweep (puddle area) + stand up
+    // ────────────────────────────────────────────────────────────────
+
+    private IEnumerator SweepFloorForSpill()
+    {
+        Debug.Log("Robot: Beginning floor sweep (coffee spill area)...");
+
+        yield return StartCoroutine(PerformFloorSweepMotion());
+
+        // Clean up the spill visual effects (particles + puddle decal)
+        if (spilledCupInstance != null)
+        {
+            var controller = spilledCupInstance.GetComponent<SpilledCupController>();
+            if (controller != null)
+            {
+                controller.Cleanup();
+            }
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        Debug.Log("Robot: Standing back up after floor sweep...");
+        float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
+        yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  SPILLED COFFEE — grab the cup from the table onto the dustpan
+    // ────────────────────────────────────────────────────────────────
+
+    private IEnumerator GrabCupFromTable()
+    {
+        Debug.Log("Robot: Reaching to grab spilled cup from table...");
+
+        // Standing height, left arm holds dustpan steady, right arm reaches forward
+        float[] grabBodyPose = { defaultTorsoHeight, 0f, 0f };
+        float[] dustpanHoldPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] reachPose = { 10f, -45f, 0f, 60f, -10f, 0f, 0f };
+
+        // Reach toward the cup on the table
+        yield return StartCoroutine(MoveBodyArm(grabBodyPose, dustpanHoldPose, reachPose));
+        yield return new WaitForSeconds(0.5f);
+
+        // Reparent the spilled cup onto the dustpan (left gripper socket)
+        if (spilledCupInstance != null && leftGripperSocket != null)
+        {
+            spilledCupInstance.transform.SetParent(leftGripperSocket, false);
+            spilledCupInstance.transform.localPosition = spilledCupDustpanOffset;
+            spilledCupInstance.transform.localRotation = Quaternion.Euler(spilledCupDustpanRotation);
+        }
+
+        // Destroy the VR indicator (glowing red exclamation mark)
+        if (vrIndicatorInstance != null)
+        {
+            Destroy(vrIndicatorInstance);
+            vrIndicatorInstance = null;
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        // Return both arms to carry pose
+        Debug.Log("Robot: Cup collected, returning to carry pose...");
+        float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] restBodyPose = { defaultTorsoHeight, 0f, 0f };
+        yield return StartCoroutine(MoveBodyArm(restBodyPose, carryPose, carryPose));
+
+        Debug.Log("Robot: Cup grab complete.");
     }
 }

@@ -15,6 +15,7 @@ public class DistractionEvent : MonoBehaviour
     public KeyCode operatorTriggerKey = KeyCode.Space;
 
     private bool hasTriggered = false;
+    private bool isLocked = false;
     [Header("Fall Settings")]
     [Tooltip("Y position of the ground. The script will detect when the object reaches this Y to trigger the explosion.")]
     public float groundY = 0f;
@@ -55,7 +56,7 @@ public class DistractionEvent : MonoBehaviour
             return;
         }
 
-        if (!hasTriggered)
+        if (!hasTriggered && !isLocked)
         {
             // Only support a small set of keys directly via the Input System
             if (operatorTriggerKey == KeyCode.Space && Keyboard.current.spaceKey.wasPressedThisFrame)
@@ -72,7 +73,7 @@ public class DistractionEvent : MonoBehaviour
     [ContextMenu("Trigger Spill Event")]
     public void TriggerSpill()
     {
-        if (hasTriggered) return;
+        if (hasTriggered || isLocked) return;
 
         hasTriggered = true;
 
@@ -167,6 +168,12 @@ public class DistractionEvent : MonoBehaviour
             }
         }
     }
+
+    /// <summary>Prevents this event from being triggered (called by RobotTaskScheduler).</summary>
+    public void Lock() { isLocked = true; }
+
+    /// <summary>Re-enables this event after cleanup is complete.</summary>
+    public void Unlock() { isLocked = false; }
 
     [ContextMenu("Reset Event")]
     public void ResetEvent()
