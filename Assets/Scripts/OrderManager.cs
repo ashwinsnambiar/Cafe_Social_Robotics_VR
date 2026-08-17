@@ -1,93 +1,264 @@
-using UnityEngine;
+// OrderManager.cs
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
+using TMPro;
 
 public class OrderManager : MonoBehaviour
 {
-    public GameObject orderPrefab; // Your order UI asset (with TMP and a Button)
-    public Transform contentPanel; // The Panel with Vertical Layout Group
-    public float spawnInterval = 10f; // Time between orders
+    [System.Serializable]
+    public class OrderData
+    {
+        public string orderTitle = "Order";
+        [Tooltip("Table index matching your WaypointTable array (0-indexed or 1-indexed to match your buttons)")]
+        public int targetTableIndex = 0;
+        public List<ItemType> requiredItems = new List<ItemType>();
 
-    [Header("Audio Settings")]
+        [TextArea(2, 4)]
+        public string displayDescription;
+    }
+
+    [System.Serializable]
+    public class OrderSet
+    {
+        public string setName = "Set";
+        public List<OrderData> orders = new List<OrderData>();
+    }
+
+    public static OrderManager Instance { get; private set; }
+
+    [Header("Trial Setup")]
+    public List<OrderSet> orderSets = new List<OrderSet>();
+    public bool randomizeSetOrder = false;
+    public bool randomizeOrdersWithinSets = false;
+    public int randomSeed = 0;
+
+    [Header("UI & Timing")]
+    public GameObject orderPrefab;
+    public Transform contentPanel;
+    public float spawnInterval = 5f;
+
+    [Header("Audio")]
     public AudioSource audioSource;
     public AudioClip newOrderSound;
     public AudioClip completeOrderSound;
 
+    [Header("Events")]
+    public UnityEvent<int> onSetStarted;
+    public UnityEvent<int> onSetCompleted;
+    public UnityEvent onStudyCompleted;
 
-    // Preset order list
-    private List<string> presetOrders = new List<string>
+    [System.Serializable]
+    public class ActiveOrderInstance
     {
-        "Burger - 1x\nEspresso - 1x",
-        "Donut - 2x\nCappuccino - 1x",
-        "Croissant - 2x\nCappuccino - 1x",
-        "Flatbread - 2x\nWater - 1x",
-        "Schokobrotchen - 2x\nMilch - 1x"
-        // Add more orders as needed
-    };
-    private int currentOrderIndex = 0;
+        public OrderData data;
+        public GameObject cardObject;
+    }
+
+    private List<OrderSet> runtimeSets = new List<OrderSet>();
+    private int currentSetIndex = 0;
+    private int currentOrderInSetIndex = 0;
+    private int currentDeliveryIndexInSet = 0;
+    private int totalOrdersCompletedInSet = 0;
+    private bool isPaused = false;
+    private List<ActiveOrderInstance> activeOrders = new List<ActiveOrderInstance>();
+
+    public IReadOnlyList<ActiveOrderInstance> ActiveOrders => activeOrders;
+    public OrderData CurrentActiveOrder => activeOrders.Count > 0 ? activeOrders[0].data : null;
+    public string CurrentSetName => (currentSetIndex >= 0 && currentSetIndex < runtimeSets.Count) ? runtimeSets[currentSetIndex].setName : $"Set {currentSetIndex + 1}";
+    public int CurrentSetNumber => currentSetIndex + 1;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
     void Start()
     {
-        // This loops through any cards you manually placed in the editor and deletes them
-        foreach (Transform child in contentPanel)
+        foreach (Transform child in contentPanel) Destroy(child.gameObject);
+        InitializeTrialData();
+        StartNextSet();
+    }
+
+    private void InitializeTrialData()
+    {
+        if (randomSeed != 0) Random.InitState(randomSeed);
+
+        runtimeSets = new List<OrderSet>();
+        foreach (var set in orderSets)
         {
-            Destroy(child.gameObject);
+            OrderSet copy = new OrderSet
+            {
+                setName = set.setName,
+                orders = new List<OrderData>(set.orders)
+            };
+
+            if (randomizeOrdersWithinSets) ShuffleList(copy.orders);
+            runtimeSets.Add(copy);
         }
 
+        if (randomizeSetOrder) ShuffleList(runtimeSets);
+    }
+
+    private void StartNextSet()
+    {
+        if (currentSetIndex >= runtimeSets.Count)
+        {
+            onStudyCompleted?.Invoke();
+            Debug.Log("<color=green>All Trial Sets Finished.</color>");
+            return;
+        }
+
+        currentOrderInSetIndex = 0;
+        currentDeliveryIndexInSet = 0;
+        totalOrdersCompletedInSet = 0;
+        activeOrders.Clear();
+        isPaused = false;
+        onSetStarted?.Invoke(currentSetIndex);
         StartCoroutine(SpawnOrdersRoutine());
     }
 
-    IEnumerator SpawnOrdersRoutine()
+    public OrderData GetCurrentDeliveryTargetOrder(out bool isTicked, out int deliveryNumber, out int totalOrdersInSet)
     {
-        while (currentOrderIndex < presetOrders.Count)
+        isTicked = false;
+        deliveryNumber = currentDeliveryIndexInSet + 1;
+        totalOrdersInSet = 0;
+
+        if (currentSetIndex >= runtimeSets.Count) return null;
+        var currentSet = runtimeSets[currentSetIndex];
+        totalOrdersInSet = currentSet.orders.Count;
+
+        if (currentDeliveryIndexInSet >= currentSet.orders.Count)
         {
-            yield return new WaitForSeconds(spawnInterval);
-            CreateNewOrder();
+            return null;
+        }
+
+        OrderData target = currentSet.orders[currentDeliveryIndexInSet];
+
+        // An active order instance still in activeOrders list means it has not been ticked yet
+        bool stillOnScreen = activeOrders.Exists(a => a.data == target);
+        isTicked = !stillOnScreen;
+
+        return target;
+    }
+
+    public void AdvanceDelivery()
+    {
+        currentDeliveryIndexInSet++;
+
+        if (currentSetIndex < runtimeSets.Count && currentDeliveryIndexInSet >= runtimeSets[currentSetIndex].orders.Count)
+        {
+            CheckSetCompletion();
         }
     }
 
-    void CreateNewOrder()
+    private IEnumerator SpawnOrdersRoutine()
     {
-        if (currentOrderIndex >= presetOrders.Count)
-            return;
+        var currentSet = runtimeSets[currentSetIndex];
 
-        // 1. Instantiate the prefab
-        GameObject newOrder = Instantiate(orderPrefab, contentPanel);
-
-        // Play "New Order" sound
-        if (audioSource && newOrderSound)
-            audioSource.PlayOneShot(newOrderSound);
-
-        // 2. Setup the text (e.g., "Order #1:\nBurger - 1x\nCola - 1x")
-        TMP_Text orderText = newOrder.GetComponentInChildren<TMP_Text>();
-        if (orderText != null)
+        while (currentOrderInSetIndex < currentSet.orders.Count)
         {
-            string formattedOrder = $"Order #{currentOrderIndex + 1}:\n" + presetOrders[currentOrderIndex];
-            orderText.text = formattedOrder;
+            if (isPaused) yield break;
+
+            SpawnOrder(currentSet.orders[currentOrderInSetIndex]);
+            currentOrderInSetIndex++;
+
+            if (currentOrderInSetIndex < currentSet.orders.Count)
+            {
+                yield return new WaitForSeconds(spawnInterval);
+            }
+        }
+    }
+
+    private void SpawnOrder(OrderData order)
+    {
+        GameObject card = Instantiate(orderPrefab, contentPanel);
+        ActiveOrderInstance instance = new ActiveOrderInstance
+        {
+            data = order,
+            cardObject = card
+        };
+        activeOrders.Add(instance);
+
+        // Bind tick / clear button on this specific card
+        Button clearBtn = card.GetComponentInChildren<Button>();
+        if (clearBtn != null)
+        {
+            clearBtn.onClick.RemoveAllListeners();
+            clearBtn.onClick.AddListener(() => CompleteOrder(instance));
         }
 
-        // 3. Link the button to remove the order
-        Button btn = newOrder.GetComponentInChildren<Button>();
-        if (btn != null)
+        if (audioSource && newOrderSound) audioSource.PlayOneShot(newOrderSound);
+
+        TMP_Text textComp = card.GetComponentInChildren<TMP_Text>();
+        if (textComp != null)
         {
-            btn.onClick.AddListener(() => CompleteOrder(newOrder));
+            string desc = string.IsNullOrEmpty(order.displayDescription)
+                ? string.Join("\n", order.requiredItems)
+                : order.displayDescription;
+
+            int displayTableNumber = order.targetTableIndex + 1;
+            string titlePrefix = string.IsNullOrEmpty(order.orderTitle) ? "Order" : order.orderTitle;
+
+            textComp.text = $"<b>{titlePrefix} (Deliver to Table: {displayTableNumber})</b>\n{desc}";
         }
 
-        // Force UI Refresh to prevent overlaps
         LayoutRebuilder.ForceRebuildLayoutImmediate(contentPanel.GetComponent<RectTransform>());
-
-        currentOrderIndex++;
     }
 
-    public void CompleteOrder(GameObject orderObj)
+    public void CompleteOrder(ActiveOrderInstance instance)
     {
-        // Play "Order Complete" sound
-        if (audioSource && completeOrderSound)
-            audioSource.PlayOneShot(completeOrderSound);
+        if (instance == null || !activeOrders.Contains(instance)) return;
 
-        // Logic for finishing the order (play sound, add score, etc.)
-        Destroy(orderObj);
+        if (audioSource && completeOrderSound) audioSource.PlayOneShot(completeOrderSound);
+
+        if (instance.cardObject != null) Destroy(instance.cardObject);
+        activeOrders.Remove(instance);
+        totalOrdersCompletedInSet++;
+
+        CheckSetCompletion();
+    }
+
+    private void CheckSetCompletion()
+    {
+        if (isPaused || currentSetIndex >= runtimeSets.Count) return;
+
+        int totalInSet = runtimeSets[currentSetIndex].orders.Count;
+        if (totalOrdersCompletedInSet >= totalInSet || currentDeliveryIndexInSet >= totalInSet)
+        {
+            isPaused = true;
+            int finishedIdx = currentSetIndex;
+            currentSetIndex++;
+            onSetCompleted?.Invoke(finishedIdx);
+        }
+    }
+
+    public void CompleteCurrentOrder()
+    {
+        if (activeOrders.Count > 0)
+        {
+            CompleteOrder(activeOrders[0]);
+        }
+    }
+
+    public void ResumeNextSet()
+    {
+        if (!isPaused) return;
+        foreach (Transform child in contentPanel) Destroy(child.gameObject);
+        StartNextSet();
+    }
+
+    private void ShuffleList<T>(IList<T> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int r = Random.Range(0, i + 1);
+            T temp = list[i];
+            list[i] = list[r];
+            list[r] = temp;
+        }
     }
 }

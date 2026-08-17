@@ -115,6 +115,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9535c8060d60a014e8d54f995ea0faae, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5257430453795703391}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9535c8060d60a014e8d54f995ea0faae, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5945479558401996967}
   m_SourcePrefab: {fileID: 100100000, guid: 9535c8060d60a014e8d54f995ea0faae, type: 3}
 --- !u!4 &8507480290328619461 stripped
 Transform:
@@ -303,3 +306,16 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.21875048, y: 0.09745777, z: 0.20492777}
   m_Center: {x: 0.008160591, y: 0.04675609, z: 0.0019697398}
+--- !u!114 &5945479558401996967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9032941653473424255}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DishItem
+  itemType: 8

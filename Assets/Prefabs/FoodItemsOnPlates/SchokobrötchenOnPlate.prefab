@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8359844114280701859}
   - component: {fileID: 5181508722059177179}
   - component: {fileID: 1095136818327410976}
+  - component: {fileID: 1725320451249523309}
   m_Layer: 0
   m_Name: "Schokobr\xF6tchenOnPlate"
   m_TagString: Untagged
@@ -191,6 +192,19 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &1725320451249523309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6187219764056776475}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DishItem
+  itemType: 7
 --- !u!1001 &630186488929704100
 PrefabInstance:
   m_ObjectHideFlags: 0

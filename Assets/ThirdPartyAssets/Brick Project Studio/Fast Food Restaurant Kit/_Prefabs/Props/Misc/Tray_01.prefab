@@ -409,6 +409,7 @@ GameObject:
   - component: {fileID: 8397883192828176376}
   - component: {fileID: 1698897136782404008}
   - component: {fileID: 8448794652611730510}
+  - component: {fileID: 4728448201337418236}
   m_Layer: 0
   m_Name: Tray_01
   m_TagString: Untagged
@@ -817,6 +818,22 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &4728448201337418236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6174100585796624561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db3a32fb521da324dacb771b3cb87f8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrayController
+  dishSockets:
+  - {fileID: 3840676372092026042}
+  - {fileID: 3331115960186836546}
+  - {fileID: 7677815064982411640}
 --- !u!1 &8739425572171241366
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -245,9 +246,80 @@ public class DeliveryRobot : MonoBehaviour
             return;
         }
 
+        // --- VALIDATION LOGIC ---
+        ValidateOrderDelivery(tableIndex);
+
         OnTableSelectedEvent?.Invoke(tableIndex);
 
         if (tableSelectionCanvas != null) tableSelectionCanvas.SetActive(false);
+    }
+
+    private void ValidateOrderDelivery(int selectedTable)
+    {
+        if (OrderManager.Instance == null)
+        {
+            Debug.LogWarning("OrderManager is missing.");
+            return;
+        }
+
+        var activeOrder = OrderManager.Instance.GetCurrentDeliveryTargetOrder(out bool wasTicked, out int deliveryNumber, out int totalInSet);
+        if (activeOrder == null)
+        {
+            Debug.LogWarning("No scheduled order for this delivery attempt.");
+            return;
+        }
+
+        // 1. Check Table Selection
+        bool isTableCorrect = (selectedTable == activeOrder.targetTableIndex);
+
+        // 2. Locate TrayController from either robot gripper/socket
+        TrayController dockedTray = null;
+        if (leftSocketInteractor != null && leftSocketInteractor.hasSelection)
+        {
+            var tr = leftSocketInteractor.interactablesSelected[0].transform;
+            dockedTray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
+        }
+        if (dockedTray == null && rightSocketInteractor != null && rightSocketInteractor.hasSelection)
+        {
+            var tr = rightSocketInteractor.interactablesSelected[0].transform;
+            dockedTray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
+        }
+
+        // 3. Check Tray Dishes
+        bool areDishesCorrect = false;
+        List<ItemType> actualDishes = new List<ItemType>();
+
+        if (dockedTray != null)
+        {
+            actualDishes = dockedTray.GetCurrentDishTypes();
+            areDishesCorrect = CompareDishLists(activeOrder.requiredItems, actualDishes);
+        }
+
+        // 4. Log for HRI experiment analysis
+        int displaySelectedTable = selectedTable + 1;
+        int displayTargetTable = activeOrder.targetTableIndex + 1;
+        string orderTitle = string.IsNullOrEmpty(activeOrder.orderTitle) ? $"Order {deliveryNumber}" : activeOrder.orderTitle;
+        string setName = OrderManager.Instance.CurrentSetName;
+
+        Debug.Log($"<color=cyan>[HRI Log]</color> Set: '{setName}' | Delivery: {deliveryNumber}/{totalInSet} | Order: '{orderTitle}' | " +
+                  $"Table Match: <b>{isTableCorrect}</b> (Selected: Table {displaySelectedTable}, Target: Table {displayTargetTable}) | " +
+                  $"Dish Match: <b>{areDishesCorrect}</b> (Placed: [{string.Join(", ", actualDishes)}], Required: [{string.Join(", ", activeOrder.requiredItems)}]) | " +
+                  $"Ticked On Board: <b>{wasTicked}</b>");
+
+        // 5. Advance running delivery counter
+        OrderManager.Instance.AdvanceDelivery();
+    }
+
+    private bool CompareDishLists(List<ItemType> expected, List<ItemType> actual)
+    {
+        if (expected.Count != actual.Count) return false;
+
+        List<ItemType> pool = new List<ItemType>(actual);
+        foreach (var item in expected)
+        {
+            if (!pool.Remove(item)) return false;
+        }
+        return pool.Count == 0;
     }
 
     private IEnumerator PrepareAndGoToTable(int tableIndex)

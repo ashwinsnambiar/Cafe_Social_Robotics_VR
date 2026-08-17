@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 7109747136013553325}
   - component: {fileID: 8249613280465568351}
   - component: {fileID: 425951286075629117}
+  - component: {fileID: 4109071482014386532}
+  - component: {fileID: 1743408727517287028}
   m_Layer: 0
   m_Name: BurgerOnPlate
   m_TagString: Untagged
@@ -77,7 +79,7 @@ MonoBehaviour:
   m_InteractionManager: {fileID: 0}
   m_Colliders: []
   m_InteractionLayers:
-    m_Bits: 1
+    m_Bits: 2
   m_DistanceCalculationMode: 1
   m_SelectMode: 0
   m_FocusMode: 1
@@ -191,6 +193,32 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &4109071482014386532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2160218392349853897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DishItem
+  itemType: 0
+--- !u!114 &1743408727517287028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2160218392349853897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DishItem
+  itemType: 0
 --- !u!1001 &3316050736909866217
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -12707,12 +12707,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dcb0e59a496d034a95ce5ca49d6dff3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrderManager
+  orderSets:
+  - setName: 
+    orders:
+    - orderTitle: '# 1'
+      targetTableIndex: 0
+      requiredItems: 000000000000000001000000
+      displayDescription: 'Burger - 2x
+
+        Espresso - 1x'
+    - orderTitle: '# 2'
+      targetTableIndex: 0
+      requiredItems: 020000000200000001000000
+      displayDescription: 'Donut - 2x
+
+        Espresso - 1x'
+  randomizeSetOrder: 0
+  randomizeOrdersWithinSets: 0
+  randomSeed: 0
   orderPrefab: {fileID: 3020100807122467944, guid: 200d476438a019242b8c255fef88a6b7, type: 3}
   contentPanel: {fileID: 766882539}
   spawnInterval: 5
   audioSource: {fileID: 766882545}
   newOrderSound: {fileID: 8300000, guid: 0aa8f63960052404099f83efdd48c553, type: 3}
   completeOrderSound: {fileID: 8300000, guid: 130fa85554fe3584b9acdd68251bd6a3, type: 3}
+  onSetStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onSetCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onStudyCompleted:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &766882544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13531,10 +13558,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 425951286075629117, guid: eccb4432079fcf8428d1efac576d8237, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 2160218392349853897, guid: eccb4432079fcf8428d1efac576d8237, type: 3}
       propertyPath: m_Name
       value: BurgerOnPlate (1)
@@ -29893,10 +29916,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 9191749894533938090, guid: 40e6356e89ff44d4b84c98ff4dd31ede, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -44828,10 +44847,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 425951286075629117, guid: eccb4432079fcf8428d1efac576d8237, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 2160218392349853897, guid: eccb4432079fcf8428d1efac576d8237, type: 3}
       propertyPath: m_Name
       value: BurgerOnPlate
@@ -45131,10 +45146,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 1095136818327410976, guid: 79c4d3bdea792cd408a3c7fb4af85b15, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 6187219764056776475, guid: 79c4d3bdea792cd408a3c7fb4af85b15, type: 3}
       propertyPath: m_Name
       value: "Schokobr\xF6tchenOnPlate"
@@ -45884,10 +45895,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 7644553047842096710, guid: b5f172e35021ddf4296d2b526a08d126, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -46645,10 +46652,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 1924378427354629743, guid: da21fc4c7597b2f43be14fdb68e4149b, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 3746345874595381952, guid: da21fc4c7597b2f43be14fdb68e4149b, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.721
@@ -47777,10 +47780,6 @@ PrefabInstance:
       propertyPath: m_InteractionManager
       value: 
       objectReference: {fileID: 756192407}
-    - target: {fileID: 4894583736819739761, guid: e5797324b7c151044a35672ec4b57d4d, type: 3}
-      propertyPath: m_InteractionLayers.m_Bits
-      value: 2
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

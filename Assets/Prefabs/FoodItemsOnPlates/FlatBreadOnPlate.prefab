@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3746345874595381952}
   - component: {fileID: 5198020888802017976}
   - component: {fileID: 1924378427354629743}
+  - component: {fileID: 1246838062922532130}
   m_Layer: 0
   m_Name: FlatBreadOnPlate
   m_TagString: Untagged
@@ -191,6 +192,19 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &1246838062922532130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6194992338249507507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DishItem
+  itemType: 5
 --- !u!1001 &883607405915115752
 PrefabInstance:
   m_ObjectHideFlags: 0
