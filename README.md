@@ -31,6 +31,7 @@ The Agibot G1 robot model is used under the terms specified by the [GenieSimAsse
 2. Open the project in Unity (recommended version: Unity 6.3 LTS or later).
 3. Ensure VR support is enabled in your Unity Editor by using the proper XR Interaction Toolkit package and OpenXR plugin.
 4. Play the scene to explore the cafe and interact with the robot.
+5. For detailed instructions on setting up experiments and orders, refer to the [EXPERIMENT_AND_ORDER_SETUP_GUIDE.md](./EXPERIMENT_AND_ORDER_SETUP_GUIDE.md).
 
 ## License
 See individual asset licenses in [credits.md](./credits.md). Project code is licensed under the MIT License unless otherwise specified.

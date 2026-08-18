@@ -185,6 +185,11 @@ public class DeliveryRobot : MonoBehaviour
 
             // Notify the Controller that we finished a run so it can check for pending cleanup tasks
             OnDeliveryFinished?.Invoke();
+
+            if (OrderManager.Instance != null)
+            {
+                OrderManager.Instance.CheckSetCompletion();
+            }
         }
     }
 

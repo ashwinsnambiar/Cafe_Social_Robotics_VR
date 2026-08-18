@@ -69,6 +69,11 @@ public class OrderManager : MonoBehaviour
     public OrderData CurrentActiveOrder => activeOrders.Count > 0 ? activeOrders[0].data : null;
     public string CurrentSetName => (currentSetIndex >= 0 && currentSetIndex < runtimeSets.Count) ? runtimeSets[currentSetIndex].setName : $"Set {currentSetIndex + 1}";
     public int CurrentSetNumber => currentSetIndex + 1;
+    public int CurrentSetIndex
+    {
+        get => currentSetIndex;
+        set => currentSetIndex = value;
+    }
 
     void Awake()
     {
@@ -80,6 +85,12 @@ public class OrderManager : MonoBehaviour
     {
         foreach (Transform child in contentPanel) Destroy(child.gameObject);
         InitializeTrialData();
+
+        if (ExperimentSessionManager.Instance != null)
+        {
+            currentSetIndex = ExperimentSessionManager.Instance.CurrentSetIndex;
+        }
+
         StartNextSet();
     }
 
@@ -222,18 +233,55 @@ public class OrderManager : MonoBehaviour
         CheckSetCompletion();
     }
 
-    private void CheckSetCompletion()
+    public void CheckSetCompletion()
     {
         if (isPaused || currentSetIndex >= runtimeSets.Count) return;
 
         int totalInSet = runtimeSets[currentSetIndex].orders.Count;
-        if (totalOrdersCompletedInSet >= totalInSet || currentDeliveryIndexInSet >= totalInSet)
+
+        // Condition for set completion:
+        // 1. All order cards must have been cleared/ticked by the VR user (activeOrders list is empty)
+        // 2. All orders in the set must have been completed (totalOrdersCompletedInSet >= totalInSet)
+        // 3. The robot must have received all delivery dispatches (currentDeliveryIndexInSet >= totalInSet)
+        // 4. The robot must have finished placing the order and returned/finished delivering (!isActivelyDelivering)
+        if (totalOrdersCompletedInSet >= totalInSet && activeOrders.Count == 0 && currentDeliveryIndexInSet >= totalInSet)
         {
-            isPaused = true;
-            int finishedIdx = currentSetIndex;
-            currentSetIndex++;
-            onSetCompleted?.Invoke(finishedIdx);
+            DeliveryRobot robot = FindAnyObjectByType<DeliveryRobot>();
+            if (robot != null && robot.isActivelyDelivering)
+            {
+                StartCoroutine(WaitForRobotToFinishAndCompleteSet());
+                return;
+            }
+
+            CompleteSetNow();
         }
+    }
+
+    private IEnumerator WaitForRobotToFinishAndCompleteSet()
+    {
+        DeliveryRobot robot = FindAnyObjectByType<DeliveryRobot>();
+        if (robot != null)
+        {
+            yield return new WaitUntil(() => !robot.isActivelyDelivering);
+        }
+
+        if (isPaused || currentSetIndex >= runtimeSets.Count) yield break;
+
+        int totalInSet = runtimeSets[currentSetIndex].orders.Count;
+        if (totalOrdersCompletedInSet >= totalInSet && activeOrders.Count == 0 && currentDeliveryIndexInSet >= totalInSet)
+        {
+            CompleteSetNow();
+        }
+    }
+
+    private void CompleteSetNow()
+    {
+        if (isPaused || currentSetIndex >= runtimeSets.Count) return;
+
+        isPaused = true;
+        int finishedIdx = currentSetIndex;
+        currentSetIndex++;
+        onSetCompleted?.Invoke(finishedIdx);
     }
 
     public void CompleteCurrentOrder()
