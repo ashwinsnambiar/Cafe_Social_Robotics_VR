@@ -11,8 +11,8 @@ public class DistractionEvent : MonoBehaviour
     public GameObject intactObject;
     
     [Header("Operator Controls")]
-    [Tooltip("Press this key on the host PC to trigger the event.")]
-    public KeyCode operatorTriggerKey = KeyCode.Space;
+    [Tooltip("Press this key on the host PC to trigger the event (New Input System).")]
+    public Key triggerKey = Key.Space;
 
     private bool hasTriggered = false;
     private bool isLocked = false;
@@ -49,22 +49,24 @@ public class DistractionEvent : MonoBehaviour
 
     void Update()
     {
-        // Use the new Input System for keyboard input (match ExplosionController)
         if (Keyboard.current == null)
-        {
-            Debug.LogWarning("DistractionEvent: Keyboard.current is null. Ensure the Input System package is installed and 'Active Input Handling' is set to 'Input System Package (New)'.");
             return;
-        }
 
-        if (!hasTriggered && !isLocked)
+        if (Keyboard.current[triggerKey].wasPressedThisFrame)
         {
-            // Only support a small set of keys directly via the Input System
-            if (operatorTriggerKey == KeyCode.Space && Keyboard.current.spaceKey.wasPressedThisFrame)
+            if (hasTriggered)
+            {
+                Debug.LogWarning($"DistractionEvent: Key {triggerKey} pressed, but event has already triggered.");
+            }
+            else if (isLocked)
+            {
+                Debug.LogWarning($"DistractionEvent: Key {triggerKey} pressed, but event is currently locked by RobotTaskScheduler.");
+            }
+            else
+            {
+                Debug.Log($"DistractionEvent: Key {triggerKey} pressed! Triggering bottle fall...");
                 TriggerSpill();
-            else if (operatorTriggerKey == KeyCode.E && Keyboard.current.eKey.wasPressedThisFrame)
-                TriggerSpill();
-            else if (operatorTriggerKey == KeyCode.R && Keyboard.current.rKey.wasPressedThisFrame)
-                TriggerSpill();
+            }
         }
     }
 
@@ -173,7 +175,11 @@ public class DistractionEvent : MonoBehaviour
     public void Lock() { isLocked = true; }
 
     /// <summary>Re-enables this event after cleanup is complete.</summary>
-    public void Unlock() { isLocked = false; }
+    public void Unlock()
+    {
+        isLocked = false;
+        hasTriggered = false;
+    }
 
     [ContextMenu("Reset Event")]
     public void ResetEvent()

@@ -38,11 +38,11 @@ public class DeliveryRobot : MonoBehaviour
 
     [Header("Arm Poses")]
     [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
-    [SerializeField] private float[] placePose = { 20f, -90f, 0f, 85f, 0f, -40f, 0f };
+    [SerializeField] private float[] placePose = { 40f, -90f, 0f, 65f, 0f, -20f, 0f };
 
     [Header("Placement Settings")]
     [SerializeField] private float placeDelay = 1f; // Delay before opening gripper to place tray
-    [SerializeField] private float bodyForwardPitch = 15f; // Forward bend angle (negative = forward)
+    [SerializeField] private float bodyForwardPitch = 20f; // Forward bend angle (negative = forward)
 
     private NavMeshAgent agent;
     private Transform currentTarget;
@@ -139,9 +139,9 @@ public class DeliveryRobot : MonoBehaviour
             bool armsReady = false;
             bool bodyReady = false;
 
-            float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+            float[] restPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
             armController.MoveBothArms(restPose, restPose, () => armsReady = true);
-            bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady = true);
+            bodyController.MoveBodyAndHead(0.5f, 0f, 0f, () => bodyReady = true);
 
             yield return new WaitUntil(() => armsReady && bodyReady);
 
@@ -392,8 +392,8 @@ public class DeliveryRobot : MonoBehaviour
 
         // Move body back to rest pose
         bool bodyReady2 = false;
-        float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
-        bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady2 = true);
+        float[] restPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
+        bodyController.MoveBodyAndHead(0.5f, 0f, 0f, () => bodyReady2 = true);
         yield return new WaitUntil(() => bodyReady2);
 
         // Reset state and return to bar

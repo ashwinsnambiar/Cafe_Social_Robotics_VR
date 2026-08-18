@@ -42,9 +42,25 @@ public class CafeSpillManager : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current != null && Keyboard.current[triggerKey].wasPressedThisFrame && !hasSpilled && !isLocked && availableCups.Count > 0)
+        if (Keyboard.current != null && Keyboard.current[triggerKey].wasPressedThisFrame)
         {
-            StartCoroutine(TriggerRandomSpill());
+            if (hasSpilled)
+            {
+                Debug.LogWarning($"CafeSpillManager: Key {triggerKey} pressed, but spill has already occurred.");
+            }
+            else if (isLocked)
+            {
+                Debug.LogWarning($"CafeSpillManager: Key {triggerKey} pressed, but event is currently locked by RobotTaskScheduler.");
+            }
+            else if (availableCups.Count == 0)
+            {
+                Debug.LogWarning($"CafeSpillManager: Key {triggerKey} pressed, but no cups are in availableCups list.");
+            }
+            else
+            {
+                Debug.Log($"CafeSpillManager: Key {triggerKey} pressed! Triggering random coffee spill...");
+                StartCoroutine(TriggerRandomSpill());
+            }
         }
     }
 
@@ -92,5 +108,9 @@ public class CafeSpillManager : MonoBehaviour
     public void Lock() { isLocked = true; }
 
     /// <summary>Re-enables this spill event after cleanup is complete.</summary>
-    public void Unlock() { isLocked = false; }
+    public void Unlock() 
+    { 
+        isLocked = false; 
+        hasSpilled = false;
+    }
 }

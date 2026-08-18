@@ -36,6 +36,14 @@ public class RobotCleanupSequence : MonoBehaviour
     public Transform leftGripperSocket;  // For the Dustpan
     public GameObject fakeGlassPile;
 
+    private Vector3 initialBroomPos;
+    private Quaternion initialBroomRot;
+    private Transform initialBroomParent;
+
+    private Vector3 initialDustpanPos;
+    private Quaternion initialDustpanRot;
+    private Transform initialDustpanParent;
+
     [Header("Articulation Controllers")]
     public RobotBodyController robotBodyController;
     public RobotArmController robotArmController;
@@ -49,7 +57,7 @@ public class RobotCleanupSequence : MonoBehaviour
 
     private bool isApproved = false;
 
-    private float defaultTorsoHeight = 0.55f;
+    private float defaultTorsoHeight = 0.5f;
     private float crouchTorsoHeight = 0.0f;
 
     // Current cleanup task state
@@ -64,6 +72,20 @@ public class RobotCleanupSequence : MonoBehaviour
         if (navigator == null)
             navigator = GetComponent<RobotNavigator>();
 
+        // Cache initial storage poses
+        if (broomPrefab != null)
+        {
+            initialBroomPos = broomPrefab.transform.position;
+            initialBroomRot = broomPrefab.transform.rotation;
+            initialBroomParent = broomPrefab.transform.parent;
+        }
+
+        if (dustpanPrefab != null)
+        {
+            initialDustpanPos = dustpanPrefab.transform.position;
+            initialDustpanRot = dustpanPrefab.transform.rotation;
+            initialDustpanParent = dustpanPrefab.transform.parent;
+        }
     }
 
     /// <summary>
@@ -360,15 +382,23 @@ public class RobotCleanupSequence : MonoBehaviour
     private void DetachToolsToGround()
     {
         if (broomPrefab != null)
-            broomPrefab.transform.SetParent(null, true);
+        {
+            broomPrefab.transform.SetParent(initialBroomParent, true);
+            broomPrefab.transform.position = initialBroomPos;
+            broomPrefab.transform.rotation = initialBroomRot;
+        }
 
         if (dustpanPrefab != null)
-            dustpanPrefab.transform.SetParent(null, true);
-
-        // Also detach the spilled cup if it was collected during coffee cleanup
-        if (spilledCupInstance != null && spilledCupInstance.transform.parent != null)
         {
-            spilledCupInstance.transform.SetParent(null, true);
+            dustpanPrefab.transform.SetParent(initialDustpanParent, true);
+            dustpanPrefab.transform.position = initialDustpanPos;
+            dustpanPrefab.transform.rotation = initialDustpanRot;
+        }
+
+        // Destroy the collected spilled cup
+        if (spilledCupInstance != null)
+        {
+            Destroy(spilledCupInstance);
             spilledCupInstance = null;
         }
     }
@@ -474,8 +504,8 @@ public class RobotCleanupSequence : MonoBehaviour
         Debug.Log("Robot: Reaching to grab spilled cup from table...");
 
         // Standing height, left arm holds dustpan steady, right arm reaches forward
-        float[] grabBodyPose = { defaultTorsoHeight, 0f, 0f };
-        float[] dustpanHoldPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
+        float[] grabBodyPose = { 0.4f, 0f, 0f };
+        float[] dustpanHoldPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
         float[] reachPose = { 10f, -45f, 0f, 60f, -10f, 0f, 0f };
 
         // Reach toward the cup on the table
