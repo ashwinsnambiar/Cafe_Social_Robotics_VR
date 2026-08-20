@@ -25,8 +25,19 @@ public class RobotKeyboardOperator : MonoBehaviour
             agent.updateRotation = false;
     }
 
+    public bool inputEnabled = true;
+
+    public void SetInputEnabled(bool enabled)
+    {
+        inputEnabled = enabled;
+    }
+
     private void Update()
     {
+
+        if (!inputEnabled)
+            return;
+
         if (Keyboard.current == null)
             return;
 
