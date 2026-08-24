@@ -73,9 +73,15 @@ On the **`Panel`** GameObject, look at the **`Order Manager (Script)`** componen
 
 ### Randomization & Timing Settings:
 - **`Randomize Set Order`**: If `true`, the 5 sets appear in a randomized order.
-- **`Randomize Orders Within Sets`**: If `true`, the 6 individual orders inside each set are shuffled.
+- **`Randomize Orders Within Sets`**: If `true`, the 6 individual orders inside each set are shuffled in sequence.
+- **`Randomize Table Assignments`**:
+  - **`false` (Default - Fixed Tables)**: Orders are delivered to whichever table they were explicitly assigned to in the Inspector (`Target Table Index`).
+  - **`true` (Randomized Tables)**: Table numbers are randomly distributed across the $M$ orders for that set.
+- **`Available Table Indices`**: *(Optional)* List of table indices to assign from (e.g. `0, 1, 2, 3, 4, 5` for Tables 1 to 6).
+  - If you leave this list **empty**, it will shuffle the existing table numbers defined across the orders in the set.
+  - If you populate this list with specific table numbers, each order randomly draws from these tables.
 - **`Random Seed`**:
-  - `0`: Generates a new random order every time.
+  - `0`: Generates a new random order/table distribution every time.
   - Any non-zero number (e.g., `42`, `101`): Produces the **exact same pseudo-random sequence** across multiple participants in a condition group.
 - **`Spawn Interval`**: Number of seconds between order cards appearing on the order board (e.g., `10.0` seconds).
 

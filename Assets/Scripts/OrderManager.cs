@@ -33,6 +33,10 @@ public class OrderManager : MonoBehaviour
     public List<OrderSet> orderSets = new List<OrderSet>();
     public bool randomizeSetOrder = false;
     public bool randomizeOrdersWithinSets = false;
+    [Tooltip("If enabled, table numbers are randomly distributed among the orders in each set rather than keeping fixed assignments.")]
+    public bool randomizeTableAssignments = false;
+    [Tooltip("Optional list of table indices to assign from (e.g. 0, 1, 2 for Tables 1, 2, 3). If empty, shuffles the existing targetTableIndex values from the orders in the set.")]
+    public List<int> availableTableIndices = new List<int>();
     public int randomSeed = 0;
 
     [Header("UI & Timing")]
@@ -104,14 +108,58 @@ public class OrderManager : MonoBehaviour
             OrderSet copy = new OrderSet
             {
                 setName = set.setName,
-                orders = new List<OrderData>(set.orders)
+                orders = new List<OrderData>()
             };
 
+            // Deep clone so runtime table randomization doesn't alter inspector asset data
+            foreach (var order in set.orders)
+            {
+                copy.orders.Add(new OrderData
+                {
+                    orderTitle = order.orderTitle,
+                    targetTableIndex = order.targetTableIndex,
+                    requiredItems = new List<ItemType>(order.requiredItems),
+                    displayDescription = order.displayDescription
+                });
+            }
+
             if (randomizeOrdersWithinSets) ShuffleList(copy.orders);
+
+            if (randomizeTableAssignments)
+            {
+                AssignRandomTables(copy.orders);
+            }
+
             runtimeSets.Add(copy);
         }
 
         if (randomizeSetOrder) ShuffleList(runtimeSets);
+    }
+
+    private void AssignRandomTables(List<OrderData> orders)
+    {
+        if (orders == null || orders.Count == 0) return;
+
+        List<int> tablePool;
+        if (availableTableIndices != null && availableTableIndices.Count > 0)
+        {
+            tablePool = new List<int>(availableTableIndices);
+        }
+        else
+        {
+            tablePool = new List<int>();
+            foreach (var o in orders)
+            {
+                tablePool.Add(o.targetTableIndex);
+            }
+        }
+
+        ShuffleList(tablePool);
+
+        for (int i = 0; i < orders.Count; i++)
+        {
+            orders[i].targetTableIndex = tablePool[i % tablePool.Count];
+        }
     }
 
     private void StartNextSet()
