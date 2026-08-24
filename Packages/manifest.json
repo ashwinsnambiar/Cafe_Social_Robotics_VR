@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.htc.upm.vive.openxr": "file:C:/Users/g/Downloads/com.htc.upm.vive.openxr-2.5.1/package",
+    "com.htc.upm.vive.openxr": "https://github.com/ViveSoftware/VIVE-OpenXR.git?path=com.htc.upm.vive.openxr",
     "com.unity.ai.navigation": "2.0.10",
     "com.unity.cloud.gltfast": "6.19.0",
     "com.unity.collab-proxy": "2.11.3",
