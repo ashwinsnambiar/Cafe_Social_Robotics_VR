@@ -16,6 +16,16 @@ public class OrderManager : MonoBehaviour
         public int targetTableIndex = 0;
         public List<ItemType> requiredItems = new List<ItemType>();
 
+        [Header("Patient Nutritional Limits")]
+        [Tooltip("Patient max calorie intake limit (kcal). Displayed in Low and High workload.")]
+        public int calorieLimit = 500;
+
+        [Tooltip("Patient max sugar intake limit (g). Displayed in High workload.")]
+        public int sugarLimit = 30;
+
+        [Tooltip("Patient max fat intake limit (g). Displayed in High workload.")]
+        public int fatLimit = 20;
+
         [TextArea(2, 4)]
         public string displayDescription;
     }
@@ -119,6 +129,9 @@ public class OrderManager : MonoBehaviour
                     orderTitle = order.orderTitle,
                     targetTableIndex = order.targetTableIndex,
                     requiredItems = new List<ItemType>(order.requiredItems),
+                    calorieLimit = order.calorieLimit,
+                    sugarLimit = order.sugarLimit,
+                    fatLimit = order.fatLimit,
                     displayDescription = order.displayDescription
                 });
             }
@@ -177,6 +190,12 @@ public class OrderManager : MonoBehaviour
         activeOrders.Clear();
         isPaused = false;
         onSetStarted?.Invoke(currentSetIndex);
+
+        if (TrialLogging.TrialDataLogger.Instance != null && currentSetIndex < runtimeSets.Count)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnSetStarted(currentSetIndex, CurrentSetName, runtimeSets[currentSetIndex].orders.Count);
+        }
+
         StartCoroutine(SpawnOrdersRoutine());
     }
 
@@ -252,6 +271,11 @@ public class OrderManager : MonoBehaviour
 
         if (audioSource && newOrderSound) audioSource.PlayOneShot(newOrderSound);
 
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnOrderSpawned(order, currentOrderInSetIndex);
+        }
+
         TMP_Text textComp = card.GetComponentInChildren<TMP_Text>();
         if (textComp != null)
         {
@@ -262,7 +286,20 @@ public class OrderManager : MonoBehaviour
             int displayTableNumber = order.targetTableIndex + 1;
             string titlePrefix = string.IsNullOrEmpty(order.orderTitle) ? "Order" : order.orderTitle;
 
-            textComp.text = $"<b>{titlePrefix} (Deliver to Table: {displayTableNumber})</b>\n{desc}";
+            bool isHighIntensity = ExperimentSessionManager.Instance != null &&
+                                  ExperimentSessionManager.Instance.workloadCondition == WorkloadCondition.HighIntensity;
+
+            string limitsText;
+            if (isHighIntensity)
+            {
+                limitsText = $"<color=#FFD700>Limits: {order.calorieLimit} kcal | {order.sugarLimit}g Sugar | {order.fatLimit}g Fat</color>\n";
+            }
+            else
+            {
+                limitsText = $"<color=#FFD700>Limit: {order.calorieLimit} kcal</color>\n";
+            }
+
+            textComp.text = $"<b>{titlePrefix} (Deliver to Table: {displayTableNumber})</b>\n{limitsText}{desc}";
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(contentPanel.GetComponent<RectTransform>());
@@ -271,6 +308,11 @@ public class OrderManager : MonoBehaviour
     public void CompleteOrder(ActiveOrderInstance instance)
     {
         if (instance == null || !activeOrders.Contains(instance)) return;
+
+        if (TrialLogging.TrialDataLogger.Instance != null && instance.data != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnOrderTicked(instance.data);
+        }
 
         if (audioSource && completeOrderSound) audioSource.PlayOneShot(completeOrderSound);
 
@@ -329,6 +371,12 @@ public class OrderManager : MonoBehaviour
         isPaused = true;
         int finishedIdx = currentSetIndex;
         currentSetIndex++;
+
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnSetCompleted(finishedIdx);
+        }
+
         onSetCompleted?.Invoke(finishedIdx);
     }
 

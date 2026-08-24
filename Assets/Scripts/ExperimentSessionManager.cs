@@ -5,6 +5,12 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+public enum WorkloadCondition
+{
+    LowIntensity,
+    HighIntensity
+}
+
 public class ExperimentSessionManager : MonoBehaviour
 {
     public static ExperimentSessionManager Instance { get; private set; }
@@ -18,6 +24,17 @@ public class ExperimentSessionManager : MonoBehaviour
 
     [Tooltip("Save and resume set index across Unity Editor play sessions (Default is false).")]
     public bool saveToPlayerPrefs = false;
+
+    [Header("Workload Condition")]
+    [Tooltip("Select LowIntensity (Calorie intake alone) or HighIntensity (Calorie, Sugar, and Fat breakdown).")]
+    public WorkloadCondition workloadCondition = WorkloadCondition.LowIntensity;
+
+    [Header("Food Details UI References (Optional - Auto-detected)")]
+    [Tooltip("CalorieIntakeAlone TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
+    public GameObject calorieAloneTextObject;
+
+    [Tooltip("NutritionBreakdown TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
+    public GameObject nutritionBreakdownTextObject;
 
     [Header("Transition & Break Settings")]
     [Tooltip("Duration in seconds for screen to fade to black and fade back in.")]
@@ -81,8 +98,10 @@ public class ExperimentSessionManager : MonoBehaviour
 
     private void Start()
     {
+        EnsureLogger();
         SyncAndBindOrderManager();
         EnsureFader();
+        ApplyWorkloadCondition();
         VRScreenFader.Instance.FadeIn(fadeDuration);
     }
 
@@ -92,11 +111,62 @@ public class ExperimentSessionManager : MonoBehaviour
         isWaitingForConfirmation = false;
         userPressedProceed = false;
 
+        EnsureLogger();
         SyncAndBindOrderManager();
         EnsureFader();
+        ApplyWorkloadCondition();
 
         // Fade in from black cleanly on new scene load
         VRScreenFader.Instance.FadeIn(fadeDuration);
+    }
+
+    public void ApplyWorkloadCondition()
+    {
+        if (calorieAloneTextObject == null || nutritionBreakdownTextObject == null)
+        {
+            var foodCanvas = GameObject.Find("FoodDetailsCanvas");
+            if (foodCanvas != null)
+            {
+                foreach (Transform child in foodCanvas.transform)
+                {
+                    if (child.name.IndexOf("Calorie", System.StringComparison.OrdinalIgnoreCase) >= 0 &&
+                        child.name.IndexOf("Alone", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        calorieAloneTextObject = child.gameObject;
+                    }
+                    else if (child.name.IndexOf("Nutrition", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             child.name.IndexOf("Breakdown", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        nutritionBreakdownTextObject = child.gameObject;
+                    }
+                }
+            }
+        }
+
+        if (calorieAloneTextObject != null)
+        {
+            calorieAloneTextObject.SetActive(workloadCondition == WorkloadCondition.LowIntensity);
+        }
+
+        if (nutritionBreakdownTextObject != null)
+        {
+            nutritionBreakdownTextObject.SetActive(workloadCondition == WorkloadCondition.HighIntensity);
+        }
+    }
+
+    private void EnsureLogger()
+    {
+        if (TrialLogging.TrialDataLogger.Instance == null)
+        {
+            GameObject loggerObj = new GameObject("TrialDataLogger");
+            var logger = loggerObj.AddComponent<TrialLogging.TrialDataLogger>();
+            logger.subjectId = subjectId;
+        }
+        else
+        {
+            TrialLogging.TrialDataLogger.Instance.subjectId = subjectId;
+            TrialLogging.TrialDataLogger.Instance.SyncSubjectId();
+        }
     }
 
     private void EnsureFader()
@@ -264,6 +334,12 @@ public class ExperimentSessionManager : MonoBehaviour
         isTransitioning = true;
         EnsureFader();
         VRScreenFader.Instance.FadeOut(fadeDuration, "<b>All Trial Sets Completed!</b>\n\nThank you for participating.");
+
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnStudyCompleted();
+        }
+
         onAllSetsFinished?.Invoke();
         yield break;
     }
@@ -299,5 +375,27 @@ public class ExperimentSessionManager : MonoBehaviour
         PlayerPrefs.Save();
         Debug.Log("<color=yellow>[ExperimentSessionManager] Progress reset to Set 1 (Index 0).</color>");
         ReloadCurrentSet();
+    }
+
+    [ContextMenu("Open Trial Logs Folder")]
+    public void OpenTrialLogsFolder()
+    {
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OpenLogFolder();
+        }
+        else
+        {
+            string rootDir = System.IO.Path.Combine(Application.dataPath, "..", "TrialLogs");
+            if (System.IO.Directory.Exists(rootDir))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = rootDir,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+        }
     }
 }

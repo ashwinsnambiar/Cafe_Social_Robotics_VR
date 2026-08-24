@@ -241,6 +241,13 @@ public class DeliveryRobot : MonoBehaviour
     {
         OnTraySecuredEvent?.Invoke();
 
+        TrayController dockedTray = GetDockedTray();
+        List<ItemType> dishes = dockedTray != null ? dockedTray.GetCurrentDishTypes() : new List<ItemType>();
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnTraySecured(dishes);
+        }
+
         if (operatorMode)
         {
             if (!operatorPickupArmed)
@@ -274,6 +281,23 @@ public class DeliveryRobot : MonoBehaviour
             Debug.LogWarning("Table Selection Canvas is missing! Defaulting to Table 0.");
             SelectTable(0);
         }
+    }
+
+    private TrayController GetDockedTray()
+    {
+        if (leftSocketInteractor != null && leftSocketInteractor.hasSelection)
+        {
+            var tr = leftSocketInteractor.interactablesSelected[0].transform;
+            var tray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
+            if (tray != null) return tray;
+        }
+        if (rightSocketInteractor != null && rightSocketInteractor.hasSelection)
+        {
+            var tr = rightSocketInteractor.interactablesSelected[0].transform;
+            var tray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
+            if (tray != null) return tray;
+        }
+        return null;
     }
 
     // Optional: If the tray is removed before selecting a table
@@ -357,17 +381,7 @@ public class DeliveryRobot : MonoBehaviour
         bool isTableCorrect = (selectedTable == activeOrder.targetTableIndex);
 
         // 2. Locate TrayController from either robot gripper/socket
-        TrayController dockedTray = null;
-        if (leftSocketInteractor != null && leftSocketInteractor.hasSelection)
-        {
-            var tr = leftSocketInteractor.interactablesSelected[0].transform;
-            dockedTray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
-        }
-        if (dockedTray == null && rightSocketInteractor != null && rightSocketInteractor.hasSelection)
-        {
-            var tr = rightSocketInteractor.interactablesSelected[0].transform;
-            dockedTray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
-        }
+        TrayController dockedTray = GetDockedTray();
 
         // 3. Check Tray Dishes
         bool areDishesCorrect = false;
@@ -389,6 +403,11 @@ public class DeliveryRobot : MonoBehaviour
                   $"Table Match: <b>{isTableCorrect}</b> (Selected: Table {displaySelectedTable}, Target: Table {displayTargetTable}) | " +
                   $"Dish Match: <b>{areDishesCorrect}</b> (Placed: [{string.Join(", ", actualDishes)}], Required: [{string.Join(", ", activeOrder.requiredItems)}]) | " +
                   $"Ticked On Board: <b>{wasTicked}</b>");
+
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnOrderDispatched(activeOrder, selectedTable, actualDishes, wasTicked);
+        }
 
         // 5. Advance running delivery counter
         OrderManager.Instance.AdvanceDelivery();
@@ -458,6 +477,11 @@ public class DeliveryRobot : MonoBehaviour
         // Detach tray from socket interactors and disable socket interactors to prevent re-grabbing during placement
         DisableSocketInteractors();
         DetachTrayFromSockets();
+
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnDeliveryCompleted();
+        }
 
         // Retract arms back to carry pose to ensure tray is fully separated
         bool armsReady2 = false;

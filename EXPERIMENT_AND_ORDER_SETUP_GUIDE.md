@@ -55,6 +55,10 @@ On the **`Panel`** GameObject, look at the **`Order Manager (Script)`** componen
           ▼ Required Items       [ 2 ]
             = Element 0          [ Burger ]
             = Element 1          [ Espresso ]
+          ▼ Patient Nutritional Limits
+            Calorie Limit        [ 500 ] <-- Displayed in Low and High Workload
+            Sugar Limit          [ 30 ]  <-- Displayed in High Workload
+            Fat Limit            [ 20 ]  <-- Displayed in High Workload
           Display Description    [ 1x Burger, 1x Espresso ]
 ```
 
@@ -69,6 +73,10 @@ On the **`Panel`** GameObject, look at the **`Order Manager (Script)`** componen
      - `2` $\rightarrow$ **Table 3** (WaypointTable3)
      *(Note: Internally indexed starting from 0, but automatically displayed to the VR user as Table 1, Table 2, Table 3, etc.)*
    - **`Required Items`**: Select the items expected on the tray (e.g., `Burger`, `Burger`, `Espresso`).
+   - **`Patient Nutritional Limits`**:
+     - **`Calorie Limit`**: Max calories allowed for this patient (e.g., `500` kcal). Displayed on the VR order card in both **Low** and **High** intensity conditions.
+     - **`Sugar Limit`**: Max sugar allowed (e.g., `30` g). Displayed on the VR order card in **High** intensity condition.
+     - **`Fat Limit`**: Max fat allowed (e.g., `20` g). Displayed on the VR order card in **High** intensity condition.
    - **`Display Description`**: *(Optional)* Custom multi-line text shown on the VR card. If left blank, it lists the required items automatically.
 
 ### Randomization & Timing Settings:
@@ -95,6 +103,7 @@ Select the **`ExperimentSessionManager`** GameObject in the Hierarchy:
 | :--- | :--- | :--- |
 | **`Subject ID`** | `Subject_01` | String identifier for the participant (used for data logging). |
 | **`Current Set Index`** | `0` | Current active trial set (`0` = Set 1, `1` = Set 2, etc.). |
+| **`Workload Condition`** | `LowIntensity` | **`LowIntensity`**: Shows only the `CalorieIntakeAlone` board in the café and displays only the Calorie Limit on the order cards.<br>**`HighIntensity`**: Shows the full `NutritionBreakdown` (Calories, Sugar, Fat) board in the café and displays all three limits on the order cards. |
 | **`Save To Player Prefs`** | `false` *(OFF)* | **Off by default**. Every time you press Play in the Editor, it starts fresh from Set 1 (or the configured `Current Set Index`). If turned `true`, it saves progress permanently across Editor restarts. |
 | **`Fade Duration`** | `1.0` | Duration (in seconds) for the low-light dimming transition. |
 | **`Min Break Duration`** | `3.0` | Minimum rest time (in seconds) the participant spends in low-light before being allowed to proceed. |
