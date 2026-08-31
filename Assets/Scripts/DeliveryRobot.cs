@@ -41,7 +41,7 @@ public class DeliveryRobot : MonoBehaviour
     [SerializeField] private float[] placePose = { 40f, -90f, 0f, 65f, 0f, -20f, 0f };
 
     [Header("Placement Settings")]
-    [SerializeField] private float placeDelay = 1f; // Delay before opening gripper to place tray
+    public float placeDelay = 1f; // Delay before opening gripper to place tray
     [SerializeField] private float bodyForwardPitch = 20f; // Forward bend angle (negative = forward)
 
     [Header("Operator Control")]

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -15,7 +16,7 @@ public class ExperimentSessionManager : MonoBehaviour
 {
     public static ExperimentSessionManager Instance { get; private set; }
 
-    [Header("Subject & Trial Settings")]
+    [Header("1. Participant & Trial Settings")]
     [Tooltip("Unique ID for the participant, used for logging and tracking.")]
     public string subjectId = "Subject_01";
 
@@ -25,18 +26,59 @@ public class ExperimentSessionManager : MonoBehaviour
     [Tooltip("Save and resume set index across Unity Editor play sessions (Default is false).")]
     public bool saveToPlayerPrefs = false;
 
-    [Header("Workload Condition")]
+    [Header("2. Workload Condition")]
     [Tooltip("Select LowIntensity (Calorie intake alone) or HighIntensity (Calorie, Sugar, and Fat breakdown).")]
     public WorkloadCondition workloadCondition = WorkloadCondition.LowIntensity;
 
-    [Header("Food Details UI References (Optional - Auto-detected)")]
-    [Tooltip("CalorieIntakeAlone TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
-    public GameObject calorieAloneTextObject;
+    [Header("3. Master Order & Timing Setup")]
+    [Tooltip("Number of seconds between order cards appearing on the order board.")]
+    public float orderSpawnInterval = 5.0f;
 
-    [Tooltip("NutritionBreakdown TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
-    public GameObject nutritionBreakdownTextObject;
+    [Tooltip("If true, the order sets appear in randomized sequence.")]
+    public bool randomizeSetOrder = false;
 
-    [Header("Transition & Break Settings")]
+    [Tooltip("If true, individual orders inside each set are shuffled.")]
+    public bool randomizeOrdersWithinSets = false;
+
+    [Tooltip("If true, table destinations are randomly distributed across orders in the set.")]
+    public bool randomizeTableAssignments = false;
+
+    [Tooltip("Optional list of table indices to assign from (e.g. 0, 1, 2 for Tables 1, 2, 3). If empty, shuffles existing targetTableIndex values from the orders.")]
+    public List<int> availableTableIndices = new List<int>();
+
+    [Tooltip("Random seed (0 = random every run, >0 = fixed repeatable pseudo-random seed).")]
+    public int randomSeed = 0;
+
+    [Tooltip("Master order sets definition. If populated, overrides/syncs to OrderManager in the scene.")]
+    public List<OrderManager.OrderSet> masterOrderSets = new List<OrderManager.OrderSet>();
+
+    [Header("4. Distraction & Event Hotkeys (Host PC)")]
+    [Tooltip("Host keyboard key to trigger a broken bottle crash distraction event.")]
+    public Key bottleCrashKey = Key.Space;
+
+    [Tooltip("Host keyboard key to trigger a coffee spill distraction event.")]
+    public Key coffeeSpillKey = Key.Space;
+
+    [Tooltip("Host keyboard key to open custom speech input for the robot.")]
+    public Key robotSpeechInputKey = Key.T;
+
+    [Header("5. Robot & Scheduler Tuning")]
+    [Tooltip("Seconds to wait after a distraction/spill occurs before the robot begins cleanup.")]
+    public float cleanupDelay = 5.0f;
+
+    [Tooltip("Delay in seconds before the robot opens grippers to place tray at destination table.")]
+    public float trayPlaceDelay = 1.0f;
+
+    [Tooltip("Enable or disable operator control mode for the delivery robot.")]
+    public bool operatorMode = true;
+
+    [Tooltip("Manual movement speed of the robot when controlled via keyboard (I/K/J/L).")]
+    public float robotManualMoveSpeed = 1.2f;
+
+    [Tooltip("Manual turn speed of the robot in degrees/second.")]
+    public float robotManualTurnSpeed = 90f;
+
+    [Header("6. Transition & Break Settings")]
     [Tooltip("Duration in seconds for screen to fade to black and fade back in.")]
     public float fadeDuration = 1.0f;
 
@@ -45,6 +87,20 @@ public class ExperimentSessionManager : MonoBehaviour
 
     [Tooltip("Require the participant (VR Trigger) or experimenter (Spacebar) to confirm before starting the next set.")]
     public bool requireInputToProceed = true;
+
+    [Header("7. Logging & Export Options")]
+    [Tooltip("If true, automatically opens the TrialLogs folder in Windows Explorer when all sets finish.")]
+    public bool openFolderOnStudyComplete = false;
+
+    [Tooltip("If true, trial CSV and JSON reports are updated incrementally after every order and set.")]
+    public bool autoSaveIncrementally = true;
+
+    [Header("Food Details UI References (Optional - Auto-detected)")]
+    [Tooltip("CalorieIntakeAlone TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
+    public GameObject calorieAloneTextObject;
+
+    [Tooltip("NutritionBreakdown TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
+    public GameObject nutritionBreakdownTextObject;
 
     [Header("Events")]
     public UnityEvent<int> onSetTransitionStarted;
@@ -98,10 +154,7 @@ public class ExperimentSessionManager : MonoBehaviour
 
     private void Start()
     {
-        EnsureLogger();
-        SyncAndBindOrderManager();
-        EnsureFader();
-        ApplyWorkloadCondition();
+        SyncAllExperimentSettings();
         VRScreenFader.Instance.FadeIn(fadeDuration);
     }
 
@@ -111,13 +164,124 @@ public class ExperimentSessionManager : MonoBehaviour
         isWaitingForConfirmation = false;
         userPressedProceed = false;
 
-        EnsureLogger();
-        SyncAndBindOrderManager();
-        EnsureFader();
-        ApplyWorkloadCondition();
+        SyncAllExperimentSettings();
 
         // Fade in from black cleanly on new scene load
         VRScreenFader.Instance.FadeIn(fadeDuration);
+    }
+
+    private void OnValidate()
+    {
+        if (Application.isPlaying)
+        {
+            SyncAllExperimentSettings();
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes master parameters across all sub-managers in the scene.
+    /// </summary>
+    public void SyncAllExperimentSettings()
+    {
+        EnsureLogger();
+        EnsureFader();
+        ApplyWorkloadCondition();
+
+        // 1. Sync OrderManager
+        if (OrderManager.Instance != null)
+        {
+            SyncOrderManager(OrderManager.Instance);
+        }
+        else
+        {
+            var om = FindAnyObjectByType<OrderManager>();
+            if (om != null) SyncOrderManager(om);
+        }
+
+        // 2. Sync DistractionEvent (Broken Bottles)
+        var distractionEvents = FindObjectsByType<DistractionEvent>(FindObjectsSortMode.None);
+        foreach (var de in distractionEvents)
+        {
+            if (de != null)
+            {
+                de.triggerKey = bottleCrashKey;
+            }
+        }
+
+        // 3. Sync CafeSpillManager (Coffee Spills)
+        var spillManagers = FindObjectsByType<CafeSpillManager>(FindObjectsSortMode.None);
+        foreach (var sm in spillManagers)
+        {
+            if (sm != null)
+            {
+                sm.triggerKey = coffeeSpillKey;
+            }
+        }
+
+        // 4. Sync RobotTaskScheduler
+        var scheduler = FindAnyObjectByType<RobotTaskScheduler>();
+        if (scheduler != null)
+        {
+            scheduler.cleanupDelay = cleanupDelay;
+        }
+
+        // 5. Sync RobotCustomSpeechInput
+        var speechInput = FindAnyObjectByType<RobotCustomSpeechInput>();
+        if (speechInput != null)
+        {
+            speechInput.openKey = robotSpeechInputKey;
+        }
+
+        // 6. Sync RobotKeyboardOperator
+        var kbOp = FindAnyObjectByType<RobotKeyboardOperator>();
+        if (kbOp != null)
+        {
+            kbOp.manualMoveSpeed = robotManualMoveSpeed;
+            kbOp.manualTurnSpeed = robotManualTurnSpeed;
+        }
+
+        // 7. Sync DeliveryRobot
+        var deliveryRobots = FindObjectsByType<DeliveryRobot>(FindObjectsSortMode.None);
+        foreach (var dr in deliveryRobots)
+        {
+            if (dr != null)
+            {
+                dr.operatorMode = operatorMode;
+                dr.placeDelay = trayPlaceDelay;
+            }
+        }
+
+        // 8. Sync TrialDataLogger
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.subjectId = subjectId;
+            TrialLogging.TrialDataLogger.Instance.openFolderOnStudyComplete = openFolderOnStudyComplete;
+            TrialLogging.TrialDataLogger.Instance.autoSaveIncrementally = autoSaveIncrementally;
+            TrialLogging.TrialDataLogger.Instance.SyncSubjectId();
+        }
+    }
+
+    public void SyncOrderManager(OrderManager om)
+    {
+        if (om == null) return;
+
+        om.CurrentSetIndex = currentSetIndex;
+        om.spawnInterval = orderSpawnInterval;
+        om.randomizeSetOrder = randomizeSetOrder;
+        om.randomizeOrdersWithinSets = randomizeOrdersWithinSets;
+        om.randomizeTableAssignments = randomizeTableAssignments;
+        om.availableTableIndices = availableTableIndices != null ? new List<int>(availableTableIndices) : new List<int>();
+        om.randomSeed = randomSeed;
+
+        if (masterOrderSets != null && masterOrderSets.Count > 0)
+        {
+            om.orderSets = masterOrderSets;
+        }
+
+        om.onSetCompleted.RemoveListener(OnSetCompletedHandler);
+        om.onSetCompleted.AddListener(OnSetCompletedHandler);
+        om.onStudyCompleted.RemoveListener(OnStudyCompletedHandler);
+        om.onStudyCompleted.AddListener(OnStudyCompletedHandler);
     }
 
     public void ApplyWorkloadCondition()
@@ -161,10 +325,14 @@ public class ExperimentSessionManager : MonoBehaviour
             GameObject loggerObj = new GameObject("TrialDataLogger");
             var logger = loggerObj.AddComponent<TrialLogging.TrialDataLogger>();
             logger.subjectId = subjectId;
+            logger.openFolderOnStudyComplete = openFolderOnStudyComplete;
+            logger.autoSaveIncrementally = autoSaveIncrementally;
         }
         else
         {
             TrialLogging.TrialDataLogger.Instance.subjectId = subjectId;
+            TrialLogging.TrialDataLogger.Instance.openFolderOnStudyComplete = openFolderOnStudyComplete;
+            TrialLogging.TrialDataLogger.Instance.autoSaveIncrementally = autoSaveIncrementally;
             TrialLogging.TrialDataLogger.Instance.SyncSubjectId();
         }
     }
@@ -179,18 +347,6 @@ public class ExperimentSessionManager : MonoBehaviour
         else
         {
             VRScreenFader.Instance.EnsureFadeObjects();
-        }
-    }
-
-    private void SyncAndBindOrderManager()
-    {
-        if (OrderManager.Instance != null)
-        {
-            OrderManager.Instance.CurrentSetIndex = currentSetIndex;
-            OrderManager.Instance.onSetCompleted.RemoveListener(OnSetCompletedHandler);
-            OrderManager.Instance.onSetCompleted.AddListener(OnSetCompletedHandler);
-            OrderManager.Instance.onStudyCompleted.RemoveListener(OnStudyCompletedHandler);
-            OrderManager.Instance.onStudyCompleted.AddListener(OnStudyCompletedHandler);
         }
     }
 
@@ -365,6 +521,73 @@ public class ExperimentSessionManager : MonoBehaviour
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         });
+    }
+
+    [ContextMenu("Pull Orders from OrderManager")]
+    public void PullOrdersFromOrderManager()
+    {
+        var om = OrderManager.Instance != null ? OrderManager.Instance : FindAnyObjectByType<OrderManager>();
+        if (om != null)
+        {
+            masterOrderSets = new List<OrderManager.OrderSet>();
+            foreach (var set in om.orderSets)
+            {
+                var copySet = new OrderManager.OrderSet
+                {
+                    setName = set.setName,
+                    orders = new List<OrderManager.OrderData>()
+                };
+                foreach (var order in set.orders)
+                {
+                    copySet.orders.Add(new OrderManager.OrderData
+                    {
+                        orderTitle = order.orderTitle,
+                        targetTableIndex = order.targetTableIndex,
+                        requiredItems = new List<ItemType>(order.requiredItems),
+                        calorieLimit = order.calorieLimit,
+                        sugarLimit = order.sugarLimit,
+                        fatLimit = order.fatLimit,
+                        displayDescription = order.displayDescription
+                    });
+                }
+                masterOrderSets.Add(copySet);
+            }
+
+            orderSpawnInterval = om.spawnInterval;
+            randomizeSetOrder = om.randomizeSetOrder;
+            randomizeOrdersWithinSets = om.randomizeOrdersWithinSets;
+            randomizeTableAssignments = om.randomizeTableAssignments;
+            availableTableIndices = om.availableTableIndices != null ? new List<int>(om.availableTableIndices) : new List<int>();
+            randomSeed = om.randomSeed;
+
+            Debug.Log($"<color=green>[ExperimentSessionManager] Successfully pulled {masterOrderSets.Count} Order Sets ({masterOrderSets.Sum(s => s.orders.Count)} total orders) and timing settings from OrderManager.</color>");
+        }
+        else
+        {
+            Debug.LogWarning("[ExperimentSessionManager] No OrderManager found in the current scene to pull orders from.");
+        }
+    }
+
+    [ContextMenu("Push Orders to OrderManager")]
+    public void PushOrdersToOrderManager()
+    {
+        var om = OrderManager.Instance != null ? OrderManager.Instance : FindAnyObjectByType<OrderManager>();
+        if (om != null)
+        {
+            SyncOrderManager(om);
+            Debug.Log($"<color=green>[ExperimentSessionManager] Successfully pushed settings and {masterOrderSets.Count} Order Sets to OrderManager.</color>");
+        }
+        else
+        {
+            Debug.LogWarning("[ExperimentSessionManager] No OrderManager found in current scene to push orders to.");
+        }
+    }
+
+    [ContextMenu("Sync All Settings to Scene Components")]
+    public void SyncAllSettingsNow()
+    {
+        SyncAllExperimentSettings();
+        Debug.Log("<color=green>[ExperimentSessionManager] All experiment settings synchronized across all scene components.</color>");
     }
 
     [ContextMenu("Reset Progress to Set 1 (Index 0)")]

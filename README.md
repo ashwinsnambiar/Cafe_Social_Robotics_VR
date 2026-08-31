@@ -11,12 +11,14 @@ This repository contains a Unity project for simulating a social robot in a virt
 - A civilian female model was added, with Mixamo animations used for background cafe customers.
 
 ## Features
-- Realistic VR cafe environment
-- Agibot G1 social robot simulation
-- Autonomous navigation using NavMesh
-- Interactive bar setup with bakery and burger assets
-- VR hand grab and place mechanics
-- Animated background customers
+- Realistic VR cafe environment with physics-based kitchen & bakery items
+- Agibot G1 social robot simulation with autonomous navigation and dual-arm manipulation
+- Centralized **Master Experiment Control Hub** (`ExperimentSessionManager`) for 1-click trial setup
+- Multi-set order workflow ($N$ Sets $\times$ $M$ Orders) with patient nutritional constraint checking
+- Low vs. High cognitive workload condition toggles
+- Distraction event triggers (broken bottle crashes, customer coffee spills) with robot interrupt & cleanup sequences
+- Comprehensive experimenter host controls & automated CSV / JSON trial data logging
+- Smooth low-light VR rest breaks and clean inter-set scene transitions
 
 ## Asset Credits
 See [credits.md](./credits.md) for a full list of third-party assets used in this project.
@@ -30,8 +32,9 @@ The Agibot G1 robot model is used under the terms specified by the [GenieSimAsse
 1. Clone this repository.
 2. Open the project in Unity (recommended version: Unity 6.3 LTS or later).
 3. Ensure VR support is enabled in your Unity Editor by using the proper XR Interaction Toolkit package and OpenXR plugin.
-4. Play the scene to explore the cafe and interact with the robot.
-5. For detailed instructions on setting up experiments and orders, refer to the [EXPERIMENT_AND_ORDER_SETUP_GUIDE.md](./EXPERIMENT_AND_ORDER_SETUP_GUIDE.md).
+4. Select the **`[ExperimentSessionManager]`** GameObject in the Hierarchy to configure all trial parameters (orders, tables, patient nutritional limits, spawn intervals, host event keys).
+5. For complete documentation on setting up experiments, hotkeys, and orders, refer to the [EXPERIMENT_AND_ORDER_SETUP_GUIDE.md](./EXPERIMENT_AND_ORDER_SETUP_GUIDE.md).
+6. Press **Play** in Unity to run the experiment.
 
 ## License
 See individual asset licenses in [credits.md](./credits.md). Project code is licensed under the MIT License unless otherwise specified.

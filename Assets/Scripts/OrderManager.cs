@@ -98,13 +98,14 @@ public class OrderManager : MonoBehaviour
     void Start()
     {
         foreach (Transform child in contentPanel) Destroy(child.gameObject);
-        InitializeTrialData();
 
         if (ExperimentSessionManager.Instance != null)
         {
+            ExperimentSessionManager.Instance.SyncOrderManager(this);
             currentSetIndex = ExperimentSessionManager.Instance.CurrentSetIndex;
         }
 
+        InitializeTrialData();
         StartNextSet();
     }
 

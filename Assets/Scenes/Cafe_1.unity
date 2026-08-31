@@ -14125,17 +14125,20 @@ MonoBehaviour:
         Espresso - 1x'
     - orderTitle: 'Patient ID: 1002'
       targetTableIndex: 2
-      requiredItems: 020000000200000001000000
+      requiredItems: 040000000200000001000000
       calorieLimit: 500
       sugarLimit: 30
       fatLimit: 20
-      displayDescription: 'Donut - 2x
+      displayDescription: 'Donut - 1x
 
-        Espresso - 1x'
+        Croissant - 1x
+
+        Espresso -
+        1x'
   - setName: Set 2
     orders:
     - orderTitle: 'Patient ID: 1001'
-      targetTableIndex: 0
+      targetTableIndex: 5
       requiredItems: 000000000000000001000000
       calorieLimit: 500
       sugarLimit: 30
@@ -25841,11 +25844,62 @@ MonoBehaviour:
   currentSetIndex: 0
   saveToPlayerPrefs: 0
   workloadCondition: 1
-  calorieAloneTextObject: {fileID: 981158008}
-  nutritionBreakdownTextObject: {fileID: 1952001360}
+  orderSpawnInterval: 5
+  randomizeSetOrder: 0
+  randomizeOrdersWithinSets: 0
+  randomizeTableAssignments: 0
+  availableTableIndices: 
+  randomSeed: 0
+  masterOrderSets:
+  - setName: Set 1
+    orders:
+    - orderTitle: 'Patient ID: 1001'
+      targetTableIndex: 0
+      requiredItems: 000000000000000001000000
+      calorieLimit: 500
+      sugarLimit: 30
+      fatLimit: 20
+      displayDescription: 'Burger - 2x
+
+        Espresso - 1x'
+    - orderTitle: 'Patient ID: 1002'
+      targetTableIndex: 2
+      requiredItems: 040000000200000001000000
+      calorieLimit: 500
+      sugarLimit: 30
+      fatLimit: 20
+      displayDescription: 'Donut - 1x
+
+        Croissant - 1x
+
+        Espresso -
+        1x'
+  - setName: Set 2
+    orders:
+    - orderTitle: 'Patient ID: 1001'
+      targetTableIndex: 5
+      requiredItems: 000000000000000001000000
+      calorieLimit: 500
+      sugarLimit: 30
+      fatLimit: 20
+      displayDescription: 'Burger - 2x
+
+        Espresso - 1x'
+  bottleCrashKey: 15
+  coffeeSpillKey: 17
+  robotSpeechInputKey: 34
+  cleanupDelay: 5
+  trayPlaceDelay: 1
+  operatorMode: 1
+  robotManualMoveSpeed: 1.2
+  robotManualTurnSpeed: 90
   fadeDuration: 5
   minBreakDuration: 3
   requireInputToProceed: 1
+  openFolderOnStudyComplete: 0
+  autoSaveIncrementally: 1
+  calorieAloneTextObject: {fileID: 981158008}
+  nutritionBreakdownTextObject: {fileID: 1952001360}
   onSetTransitionStarted:
     m_PersistentCalls:
       m_Calls: []
