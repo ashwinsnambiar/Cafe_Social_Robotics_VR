@@ -48,6 +48,7 @@ This project uses the following third-party assets located in the `Assets/ThirdP
   - Sound effects downloaded 
 	- https://pixabay.com/sound-effects/household-spilling-water-on-the-floor-7004/
 	- https://pixabay.com/sound-effects/people-human-voice-saying-oh-no-301694/
+	- https://pixabay.com/sound-effects/household-coffee-machine-40834/
   - Please refer to license agreement: https://pixabay.com/service/license-summary/
 
 ## Texture and Images

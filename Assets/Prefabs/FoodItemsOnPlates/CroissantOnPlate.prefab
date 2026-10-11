@@ -204,7 +204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DishItem
-  itemType: 4
+  itemType: 1
 --- !u!1001 &1765831512283481082
 PrefabInstance:
   m_ObjectHideFlags: 0
