@@ -11,11 +11,9 @@ public class CoffeeMachineManager : MonoBehaviour
     public XRSocketInteractor cupSocket;
 
     [Header("Drink Prefabs")]
-    public GameObject espressoPrefab;
-    public GameObject lattePrefab;
+    public GameObject teePrefab;
+    public GameObject kaffeePrefab;
     public GameObject cappucinoPrefab;
-    public GameObject milkPrefab;
-    public GameObject waterPrefab;
     // Add more as needed
 
     [Header("Effects (Optional for later)")]
@@ -54,11 +52,9 @@ public class CoffeeMachineManager : MonoBehaviour
         GameObject prefabToSpawn = null;
         switch (drinkType)
         {
-            case "Espresso": prefabToSpawn = espressoPrefab; break;
-            case "Latte": prefabToSpawn = lattePrefab; break;
+            case "Tee": prefabToSpawn = teePrefab; break;
+            case "Kaffee": prefabToSpawn = kaffeePrefab; break;
             case "Cappucino": prefabToSpawn = cappucinoPrefab; break;
-            case "Milk": prefabToSpawn = milkPrefab; break;
-            case "Water": prefabToSpawn = waterPrefab; break;
         }
 
         if (prefabToSpawn != null)

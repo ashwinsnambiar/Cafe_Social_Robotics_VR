@@ -545,8 +545,8 @@ public class ExperimentSessionManager : MonoBehaviour
                         targetTableIndex = order.targetTableIndex,
                         requiredItems = new List<ItemType>(order.requiredItems),
                         calorieLimit = order.calorieLimit,
-                        sugarLimit = order.sugarLimit,
-                        fatLimit = order.fatLimit,
+                        carbsLimit = order.carbsLimit,
+                        fettLimit = order.fettLimit,
                         displayDescription = order.displayDescription
                     });
                 }

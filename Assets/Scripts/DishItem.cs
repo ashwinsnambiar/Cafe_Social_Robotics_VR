@@ -2,17 +2,29 @@ using UnityEngine;
 
 public enum ItemType
 {
-    Burger,
-    Espresso,
+    //Burger,
+    //Espresso,
     Donut,
-    Cappuccino,
+    
     Croissant,
-    Flatbread,
-    Water,
+    //Flatbread,
+    //Water,
     Schokobrotchen,
-    Milch,
-    Latte,
-    CinnamonRoll,
+    //Milch,
+    //Latte,
+    //CinnamonRoll,
+    Reis,
+    Pasta,
+    Kartoffeln,
+    Lachs,
+    Schnitzel,
+    Steak,
+    Brokkoli,
+    Karotten,
+    Blumenkohl,
+    Cappuccino,
+    Kaffee,
+    Tee
     // Add any additional cafe items here
 }
 

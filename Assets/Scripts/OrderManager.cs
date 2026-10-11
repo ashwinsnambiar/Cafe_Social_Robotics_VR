@@ -20,11 +20,11 @@ public class OrderManager : MonoBehaviour
         [Tooltip("Patient max calorie intake limit (kcal). Displayed in Low and High workload.")]
         public int calorieLimit = 500;
 
-        [Tooltip("Patient max sugar intake limit (g). Displayed in High workload.")]
-        public int sugarLimit = 30;
+        [Tooltip("Patient max carb intake limit (g). Displayed in High workload.")]
+        public int carbsLimit = 30;
 
-        [Tooltip("Patient max fat intake limit (g). Displayed in High workload.")]
-        public int fatLimit = 20;
+        [Tooltip("Patient max fett intake limit (g). Displayed in High workload.")]
+        public int fettLimit = 20;
 
         [TextArea(2, 4)]
         public string displayDescription;
@@ -131,8 +131,8 @@ public class OrderManager : MonoBehaviour
                     targetTableIndex = order.targetTableIndex,
                     requiredItems = new List<ItemType>(order.requiredItems),
                     calorieLimit = order.calorieLimit,
-                    sugarLimit = order.sugarLimit,
-                    fatLimit = order.fatLimit,
+                    carbsLimit = order.carbsLimit,
+                    fettLimit = order.fettLimit,
                     displayDescription = order.displayDescription
                 });
             }
@@ -293,7 +293,7 @@ public class OrderManager : MonoBehaviour
             string limitsText;
             if (isHighIntensity)
             {
-                limitsText = $"<color=#FFD700>Limits: {order.calorieLimit} kcal | {order.sugarLimit}g Sugar | {order.fatLimit}g Fat</color>\n";
+                limitsText = $"<color=#FFD700>Limits: {order.calorieLimit} kcal | {order.carbsLimit}g Carbs | {order.fettLimit}g Fett</color>\n";
             }
             else
             {
