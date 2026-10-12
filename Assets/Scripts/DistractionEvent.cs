@@ -15,6 +15,9 @@ public class DistractionEvent : MonoBehaviour
     [Tooltip("Press this key on the host PC to trigger the event (New Input System).")]
     public Key triggerKey = Key.Space;
 
+    [Header("Input Blocking")]
+    public RobotCustomSpeechInput customSpeechInput;
+
 
     private bool hasTriggered = false;
     private bool isLocked = false;
