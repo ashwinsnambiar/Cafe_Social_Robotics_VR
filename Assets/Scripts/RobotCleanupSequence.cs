@@ -110,58 +110,51 @@ public class RobotCleanupSequence : MonoBehaviour
 
     private IEnumerator CleanupRoutine(GameObject tempSpillTarget)
     {
+        Debug.Log("RobotCleanupSequence: Starting cleanup without approval prompt.");
 
-        // 1. Go to Operator
-        if (operatorStandpoint != null)
+        // Make sure the approval UI is hidden, because this operator-driven version skips approval.
+        if (cleanupApprovalUI != null)
+            cleanupApprovalUI.SetActive(false);
+
+        // 1. Fetch tools
+        if (broomStorageLocation != null)
         {
-            Vector3 flatForward = operatorStandpoint.forward;
-            flatForward.y = 0;
-            flatForward.Normalize();
-
-            Vector3 targetPosition = operatorStandpoint.position + (flatForward * 1.0f);
-            Vector3 lookDirection = operatorStandpoint.position - targetPosition;
-            lookDirection.y = 0; // Keep the robot perfectly upright (by projecting onto the horizontal plane)
-
-            Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
-
-            GameObject tempTarget = new GameObject("TempTarget");
-            tempTarget.transform.position = targetPosition;
-            tempTarget.transform.rotation = targetRotation;
-
-            yield return StartCoroutine(MoveToLocation(targetPosition, tempTarget.transform));
-
-            Destroy(tempTarget);
+            yield return StartCoroutine(PickUpToolsRoutine());
         }
         else
         {
-            Debug.LogWarning("RobotCleanupSequence: operatorStandpoint not assigned.");
+            Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned. Skipping tool pickup.");
         }
 
-        // 2. Prompt VR User
-        if (cleanupApprovalUI != null)
-            cleanupApprovalUI.SetActive(true);
-        isApproved = false;
-        yield return new WaitUntil(() => isApproved == true);
-
-        // 3. Fetch Tools
-        if (broomStorageLocation != null)
-            yield return StartCoroutine(PickUpToolsRoutine());
-
-        // 4. Go to Spill
-        if (currentSpillPosition != null)
+        // 2. Go to spill location
+        if (tempSpillTarget != null)
+        {
             yield return StartCoroutine(MoveToLocation(currentSpillPosition, tempSpillTarget.transform));
+            Destroy(tempSpillTarget);
+        }
+        else
+        {
+            Debug.LogWarning("RobotCleanupSequence: tempSpillTarget is null. Moving to spill position without rotation target.");
+            yield return StartCoroutine(MoveToLocation(currentSpillPosition));
+        }
 
-        Destroy(tempSpillTarget);
-
-        // 5. Sweep
+        // 3. Sweep and collect fragments
         yield return StartCoroutine(SweepAndCollect());
 
-        // 6. Return tools
+        // 4. Return tools
         if (broomStorageLocation != null)
+        {
             yield return StartCoroutine(ReturnToolsRoutine());
+        }
+        else
+        {
+            Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned. Skipping tool return.");
+        }
 
-        // 7. Notify the Master Controller
+        // 5. Notify controller that cleanup finished
         OnCleanupComplete?.Invoke();
+
+        Debug.Log("RobotCleanupSequence: Cleanup routine finished.");
     }
 
     private IEnumerator MoveToLocation(Vector3 destination)

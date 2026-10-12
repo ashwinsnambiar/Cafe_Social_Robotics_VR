@@ -12,7 +12,7 @@ public class DistractionEvent : MonoBehaviour
     
     [Header("Operator Controls")]
     [Tooltip("Press this key on the host PC to trigger the event.")]
-    public KeyCode operatorTriggerKey = KeyCode.Space;
+    public Key operatorTriggerKey = Key.Z;
 
     private bool hasTriggered = false;
     [Header("Fall Settings")]
@@ -28,6 +28,7 @@ public class DistractionEvent : MonoBehaviour
 
     [Header("Robot Integration")]
     public UnityEvent<Transform> onCrashOccurred;
+    public OperatorCleanupWaypointController cleanupWaypointController;
 
     void Start()
     {
@@ -48,22 +49,12 @@ public class DistractionEvent : MonoBehaviour
 
     void Update()
     {
-        // Use the new Input System for keyboard input (match ExplosionController)
         if (Keyboard.current == null)
-        {
-            Debug.LogWarning("DistractionEvent: Keyboard.current is null. Ensure the Input System package is installed and 'Active Input Handling' is set to 'Input System Package (New)'.");
             return;
-        }
 
-        if (!hasTriggered)
+        if (!hasTriggered && Keyboard.current[operatorTriggerKey].wasPressedThisFrame)
         {
-            // Only support a small set of keys directly via the Input System
-            if (operatorTriggerKey == KeyCode.Space && Keyboard.current.spaceKey.wasPressedThisFrame)
-                TriggerSpill();
-            else if (operatorTriggerKey == KeyCode.E && Keyboard.current.eKey.wasPressedThisFrame)
-                TriggerSpill();
-            else if (operatorTriggerKey == KeyCode.R && Keyboard.current.rKey.wasPressedThisFrame)
-                TriggerSpill();
+            TriggerSpill();
         }
     }
 
@@ -127,7 +118,15 @@ public class DistractionEvent : MonoBehaviour
             return;
         }
 
-        // Notify any listeners (e.g. the robot cleanup sequence) that a crash occurred here
+        if (cleanupWaypointController != null)
+        {
+            cleanupWaypointController.OnCrashOccurred(t);
+        }
+        else
+        {
+            Debug.LogWarning("DistractionEvent: No OperatorCleanupWaypointController assigned.");
+        }
+
         onCrashOccurred?.Invoke(t);
 
         var explosiveComp = t.GetComponent<ExpObj.ExplosiveObject>();
