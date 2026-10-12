@@ -39,14 +39,14 @@ public class WaypointFloorMarker : MonoBehaviour
         line.startColor = color;
         line.endColor = color;
 
-        if (line.material == null)
+        if (line.sharedMaterial == null)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
 
             if (shader == null)
                 shader = Shader.Find("Sprites/Default");
 
-            line.material = new Material(shader);
+            line.sharedMaterial = new Material(shader);
         }
     }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -37,11 +38,11 @@ public class DeliveryRobot : MonoBehaviour
 
     [Header("Arm Poses")]
     [SerializeField] private float[] carryPose = { -45f, -90f, 0f, 85f, 0f, -60f, 0f };
-    [SerializeField] private float[] placePose = { 20f, -90f, 0f, 85f, 0f, -20f, 0f };
+    [SerializeField] private float[] placePose = { 40f, -90f, 0f, 65f, 0f, -20f, 0f };
 
     [Header("Placement Settings")]
-    [SerializeField] private float placeDelay = 1f; // Delay before opening gripper to place tray
-    [SerializeField] private float bodyForwardPitch = -15f; // Forward bend angle (negative = forward)
+    public float placeDelay = 1f; // Delay before opening gripper to place tray
+    [SerializeField] private float bodyForwardPitch = 20f; // Forward bend angle (negative = forward)
 
     [Header("Operator Control")]
     public RobotKeyboardOperator keyboardOperator;
@@ -117,6 +118,7 @@ public class DeliveryRobot : MonoBehaviour
         // If it is actively delivering, it will naturally end when the cycle finishes.
         if (!isActivelyDelivering)
         {
+            currentTarget = null;
             if (deliveryRoutine != null)
             {
                 StopCoroutine(deliveryRoutine);
@@ -147,9 +149,9 @@ public class DeliveryRobot : MonoBehaviour
             bool armsReady = false;
             bool bodyReady = false;
 
-            float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+            float[] restPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
             armController.MoveBothArms(restPose, restPose, () => armsReady = true);
-            bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady = true);
+            bodyController.MoveBodyAndHead(0.5f, 0f, 0f, () => bodyReady = true);
 
             yield return new WaitUntil(() => armsReady && bodyReady);
 
@@ -189,17 +191,23 @@ public class DeliveryRobot : MonoBehaviour
 
             // Delivery cycle complete
             isActivelyDelivering = false;
+            currentTarget = null;
 
             // Notify the Controller that we finished a run so it can check for pending cleanup tasks
             OnDeliveryFinished?.Invoke();
+
+            if (OrderManager.Instance != null)
+            {
+                OrderManager.Instance.CheckSetCompletion();
+            }
         }
     }
 
     void Update()
     {
-
-        if (operatorMode && !isActivelyDelivering)
-            return;
+        // Only drive navigation and orientation when delivery mode is actively running
+        if (!deliveryEnabled || !isActivelyDelivering) return;
+        if (operatorMode && !isActivelyDelivering) return;
 
         if (agent != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance && !isAtDestination)
         {
@@ -232,6 +240,13 @@ public class DeliveryRobot : MonoBehaviour
     public void OnTraySecured()
     {
         OnTraySecuredEvent?.Invoke();
+
+        TrayController dockedTray = GetDockedTray();
+        List<ItemType> dishes = dockedTray != null ? dockedTray.GetCurrentDishTypes() : new List<ItemType>();
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnTraySecured(dishes);
+        }
 
         if (operatorMode)
         {
@@ -268,6 +283,23 @@ public class DeliveryRobot : MonoBehaviour
         }
     }
 
+    private TrayController GetDockedTray()
+    {
+        if (leftSocketInteractor != null && leftSocketInteractor.hasSelection)
+        {
+            var tr = leftSocketInteractor.interactablesSelected[0].transform;
+            var tray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
+            if (tray != null) return tray;
+        }
+        if (rightSocketInteractor != null && rightSocketInteractor.hasSelection)
+        {
+            var tr = rightSocketInteractor.interactablesSelected[0].transform;
+            var tray = tr.GetComponent<TrayController>() ?? tr.GetComponentInChildren<TrayController>() ?? tr.GetComponentInParent<TrayController>();
+            if (tray != null) return tray;
+        }
+        return null;
+    }
+
     // Optional: If the tray is removed before selecting a table
     public void OnTrayRemoved()
     {
@@ -282,6 +314,9 @@ public class DeliveryRobot : MonoBehaviour
             Debug.LogError("Invalid Table Index!");
             return;
         }
+
+        // --- VALIDATION LOGIC ---
+        ValidateOrderDelivery(tableIndex);
 
         if (tableSelectionCanvas != null)
             tableSelectionCanvas.SetActive(false);
@@ -327,6 +362,69 @@ public class DeliveryRobot : MonoBehaviour
         Debug.Log("Robot returned to bar. Operator control re-enabled.");
     }
 
+    private void ValidateOrderDelivery(int selectedTable)
+    {
+        if (OrderManager.Instance == null)
+        {
+            Debug.LogWarning("OrderManager is missing.");
+            return;
+        }
+
+        var activeOrder = OrderManager.Instance.GetCurrentDeliveryTargetOrder(out bool wasTicked, out int deliveryNumber, out int totalInSet);
+        if (activeOrder == null)
+        {
+            Debug.LogWarning("No scheduled order for this delivery attempt.");
+            return;
+        }
+
+        // 1. Check Table Selection
+        bool isTableCorrect = (selectedTable == activeOrder.targetTableIndex);
+
+        // 2. Locate TrayController from either robot gripper/socket
+        TrayController dockedTray = GetDockedTray();
+
+        // 3. Check Tray Dishes
+        bool areDishesCorrect = false;
+        List<ItemType> actualDishes = new List<ItemType>();
+
+        if (dockedTray != null)
+        {
+            actualDishes = dockedTray.GetCurrentDishTypes();
+            areDishesCorrect = CompareDishLists(activeOrder.requiredItems, actualDishes);
+        }
+
+        // 4. Log for HRI experiment analysis
+        int displaySelectedTable = selectedTable + 1;
+        int displayTargetTable = activeOrder.targetTableIndex + 1;
+        string orderTitle = string.IsNullOrEmpty(activeOrder.orderTitle) ? $"Order {deliveryNumber}" : activeOrder.orderTitle;
+        string setName = OrderManager.Instance.CurrentSetName;
+
+        Debug.Log($"<color=cyan>[HRI Log]</color> Set: '{setName}' | Delivery: {deliveryNumber}/{totalInSet} | Order: '{orderTitle}' | " +
+                  $"Table Match: <b>{isTableCorrect}</b> (Selected: Table {displaySelectedTable}, Target: Table {displayTargetTable}) | " +
+                  $"Dish Match: <b>{areDishesCorrect}</b> (Placed: [{string.Join(", ", actualDishes)}], Required: [{string.Join(", ", activeOrder.requiredItems)}]) | " +
+                  $"Ticked On Board: <b>{wasTicked}</b>");
+
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnOrderDispatched(activeOrder, selectedTable, actualDishes, wasTicked);
+        }
+
+        // 5. Advance running delivery counter
+        OrderManager.Instance.AdvanceDelivery();
+    }
+
+    private bool CompareDishLists(List<ItemType> expected, List<ItemType> actual)
+    {
+        if (expected.Count != actual.Count) return false;
+
+        List<ItemType> pool = new List<ItemType>(actual);
+        foreach (var item in expected)
+        {
+            if (!pool.Remove(item)) return false;
+        }
+        return pool.Count == 0;
+    }
+
     private IEnumerator PrepareAndGoToTable(int tableIndex)
     {
         bool armsReady = false;
@@ -360,7 +458,7 @@ public class DeliveryRobot : MonoBehaviour
         bool armsReady = false;
         bool bodyReady = false;
         armController.MoveBothArms(placePose, placePose, () => armsReady = true);
-        bodyController.MoveBodyAndHead(0.55f, bodyForwardPitch, 0f, () => bodyReady = true);
+        bodyController.MoveBodyAndHead(0.4f, bodyForwardPitch, 0f, () => bodyReady = true);
         yield return new WaitUntil(() => armsReady && bodyReady);
 
         // Open both grippers to release tray
@@ -380,6 +478,11 @@ public class DeliveryRobot : MonoBehaviour
         DisableSocketInteractors();
         DetachTrayFromSockets();
 
+        if (TrialLogging.TrialDataLogger.Instance != null)
+        {
+            TrialLogging.TrialDataLogger.Instance.OnDeliveryCompleted();
+        }
+
         // Retract arms back to carry pose to ensure tray is fully separated
         bool armsReady2 = false;
         armController.MoveBothArms(carryPose, carryPose, () => armsReady2 = true);
@@ -387,8 +490,8 @@ public class DeliveryRobot : MonoBehaviour
 
         // Move body back to rest pose
         bool bodyReady2 = false;
-        float[] restPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
-        bodyController.MoveBodyAndHead(0.55f, 0f, 0f, () => bodyReady2 = true);
+        float[] restPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
+        bodyController.MoveBodyAndHead(0.5f, 0f, 0f, () => bodyReady2 = true);
         yield return new WaitUntil(() => bodyReady2);
 
         // Reset state and return to bar

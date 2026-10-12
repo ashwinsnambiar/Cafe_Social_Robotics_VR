@@ -11,10 +11,13 @@ public class DistractionEvent : MonoBehaviour
     public GameObject intactObject;
     
     [Header("Operator Controls")]
-    [Tooltip("Press this key on the host PC to trigger the event.")]
-    public Key operatorTriggerKey = Key.Z;
+
+    [Tooltip("Press this key on the host PC to trigger the event (New Input System).")]
+    public Key triggerKey = Key.Space;
+
 
     private bool hasTriggered = false;
+    private bool isLocked = false;
     [Header("Fall Settings")]
     [Tooltip("Y position of the ground. The script will detect when the object reaches this Y to trigger the explosion.")]
     public float groundY = 0f;
@@ -52,10 +55,23 @@ public class DistractionEvent : MonoBehaviour
         if (Keyboard.current == null)
             return;
 
-        if (!hasTriggered && Keyboard.current[operatorTriggerKey].wasPressedThisFrame)
-        {
-            TriggerSpill();
-        }
+if (Keyboard.current[triggerKey].wasPressedThisFrame)
+{
+    if (hasTriggered)
+    {
+        Debug.LogWarning($"DistractionEvent: Key {triggerKey} pressed, but event has already triggered.");
+    }
+    else if (isLocked)
+    {
+        Debug.LogWarning($"DistractionEvent: Key {triggerKey} pressed, but event is currently locked.");
+    }
+    else
+    {
+        Debug.Log($"DistractionEvent: Key {triggerKey} pressed! Triggering bottle fall...");
+        TriggerSpill();
+    }
+}
+        
     }
 
     // The [ContextMenu] attribute allows the operator to right-click this script 
@@ -63,7 +79,7 @@ public class DistractionEvent : MonoBehaviour
     [ContextMenu("Trigger Spill Event")]
     public void TriggerSpill()
     {
-        if (hasTriggered) return;
+        if (hasTriggered || isLocked) return;
 
         hasTriggered = true;
 
@@ -165,6 +181,16 @@ public class DistractionEvent : MonoBehaviour
                 Destroy(this);
             }
         }
+    }
+
+    /// <summary>Prevents this event from being triggered (called by RobotTaskScheduler).</summary>
+    public void Lock() { isLocked = true; }
+
+    /// <summary>Re-enables this event after cleanup is complete.</summary>
+    public void Unlock()
+    {
+        isLocked = false;
+        hasTriggered = false;
     }
 
     [ContextMenu("Reset Event")]
