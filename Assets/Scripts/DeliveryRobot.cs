@@ -78,7 +78,7 @@ public class DeliveryRobot : MonoBehaviour
         pendingExperimentTableIndex = tableIndex;
         Debug.Log($"DeliveryRobot: Received experiment target table index {tableIndex}.");
 
-        TryStartExperimentDelivery();
+        //TryStartExperimentDelivery();
     }
 
     private void TryStartExperimentDelivery()
@@ -339,7 +339,7 @@ public class DeliveryRobot : MonoBehaviour
     // Called by GripperSocketController once the tray is secured
     public void OnTraySecured()
     {
-        Debug.Log("DeliveryRobot: Tray secured.");
+        Debug.Log("DeliveryRobot: Tray secured. Waiting for operator table selection");
 
         operatorHasTray = true;
         operatorPickupArmed = false;
@@ -347,7 +347,16 @@ public class DeliveryRobot : MonoBehaviour
         // Keep compatibility with the old automatic delivery coroutine.
         OnTraySecuredEvent?.Invoke();
 
-        if (operatorMode && useExperimentOrderTable)
+        if (tableSelectionCanvas != null)
+        {
+            tableSelectionCanvas.SetActive(true);
+        }
+        else
+        {
+            Debug.LogWarning("Delivery Robot: Table Selection Canvas not assigned!");
+        }
+
+       /* if (operatorMode && useExperimentOrderTable)
         {
             TryStartExperimentDelivery();
             return;
@@ -356,6 +365,8 @@ public class DeliveryRobot : MonoBehaviour
         // Old manual table-selection fallback
         if (tableSelectionCanvas != null)
             tableSelectionCanvas.SetActive(true);
+
+        */
     }
 
     private TrayController GetDockedTray()
@@ -424,11 +435,23 @@ public class DeliveryRobot : MonoBehaviour
         if (tableSelectionCanvas != null)
             tableSelectionCanvas.SetActive(false);
 
-        if (operatorMode)
+       /* if (operatorMode)
         {
             if (operatorDeliveryRoutine != null)
                 StopCoroutine(operatorDeliveryRoutine);
 
+            operatorDeliveryRoutine = StartCoroutine(OperatorDeliverToTable(tableIndex));
+            return;
+        }*/
+
+        if (operatorMode)
+        {
+            if (operatorDeliveryRoutine != null)
+            {
+                Debug.LogWarning("Delivery already in progress.");
+                return;
+            }
+              
             operatorDeliveryRoutine = StartCoroutine(OperatorDeliverToTable(tableIndex));
             return;
         }

@@ -56,6 +56,7 @@ public class RobotCleanupSequence : MonoBehaviour
     public Vector3 spilledCupDustpanRotation = Vector3.zero;
 
     private bool isApproved = false;
+    private bool isDeclined = false;
 
     private float defaultTorsoHeight = 0.5f;
     private float crouchTorsoHeight = 0.0f;
@@ -163,6 +164,16 @@ public class RobotCleanupSequence : MonoBehaviour
         if (cleanupApprovalUI != null) cleanupApprovalUI.SetActive(false);
     }
 
+    public void UI_DeclineCleanup()
+    {
+        Debug.Log("Cleanup declined!");
+
+        isDeclined = true;
+
+        if (cleanupApprovalUI != null)
+            cleanupApprovalUI.SetActive(false);
+    }
+
     private IEnumerator CleanupRoutine()
     {
         Debug.Log("RobotCleanupSequence: Starting cleanup without approval prompt.");
@@ -179,6 +190,31 @@ public class RobotCleanupSequence : MonoBehaviour
         else
         {
             Debug.LogWarning("RobotCleanupSequence: broomStorageLocation not assigned. Skipping tool pickup.");
+        }
+
+
+        if (isDeclined)
+        {
+            Debug.Log("Cleanup cancelled. Returning to normal operation.");
+
+
+            DeliveryRobot deliveryRobot = GetComponent<DeliveryRobot>();
+
+            if(deliveryRobot != null && deliveryRobot.barPoint != null)
+            {
+                yield return StartCoroutine(MoveToLocation(deliveryRobot.barPoint.position, deliveryRobot.barPoint));
+
+                Debug.Log("Arrived ath tray pickup position");
+            }
+            else {
+                Debug.LogError("Cannot return: barPoint is missing");
+            }
+
+            isDeclined = false;
+            
+            OnCleanupComplete?.Invoke();
+
+            yield break;
         }
 
         // 2. Go to spill
@@ -328,6 +364,34 @@ public class RobotCleanupSequence : MonoBehaviour
     private IEnumerator PickUpToolsRoutine()
     {
         yield return StartCoroutine(MoveToLocation(broomStorageLocation.position, broomStorageLocation));
+
+        bool automaticMode = ExperimentSessionManager.Instance != null && !ExperimentSessionManager.Instance.operatorMode;
+
+
+
+        if (automaticMode)
+        {
+            isApproved = false;
+            isDeclined = false;
+
+
+            if (cleanupApprovalUI != null)
+            {
+                cleanupApprovalUI.SetActive(true);
+
+                yield return new WaitUntil(() => isApproved || isDeclined);
+
+                cleanupApprovalUI.SetActive(false);
+            }
+            else
+            {
+                Debug.LogWarning("Cleanup approvavl UI is not assigned");
+                isDeclined = true;
+            }
+
+            if (isDeclined)
+                yield break;
+        }
 
         float[] broomPose = { 10f, -90f, 0f, 85f, -10f, 0f, 0f };
         float[] dustpanPose = { 10f, -90f, 0f, 60f, 10f, 0f, 0f };

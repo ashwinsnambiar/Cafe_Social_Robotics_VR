@@ -10,7 +10,11 @@ public class RobotArmController : MonoBehaviour
     public float jointSpeed = 45f; // degrees per second
 
     // Initial rest pose: Link1=0, Link2=-90, Link3=0, Link4=85, Link5/6/7=0
-    private static readonly float[] RestPose = { 0f, -90f, 0f, 85f, 0f, 0f, 0f };
+    //private static readonly float[] RestPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
+
+    [Header("Default Arm Pose")]
+    [SerializeField] private float[] leftDefaultPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
+    [SerializeField] private float[] rightDefaultPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
 
     [Header("Left Arm Links")]
     public ArticulationBody link1_l;
@@ -48,6 +52,27 @@ public class RobotArmController : MonoBehaviour
         // Manually assign left and right arm arrays from Inspector fields
         _leftArm = new[] { link1_l, link2_l, link3_l, link4_l, link5_l, link6_l, link7_l };
         _rightArm = new[] { link1_r, link2_r, link3_r, link4_r, link5_r, link6_r, link7_r };
+    }
+
+
+    private void Start()
+    {
+        ApplyDefaultPose();
+    }
+
+    [ContextMenu("Apply Default Arm Pose")]
+    public void ApplyDefaultPose()
+    {
+        if (leftDefaultPose == null || leftDefaultPose.Length != 7 || rightDefaultPose == null || rightDefaultPose.Length != 7)
+        {
+            Debug.LogWarning("Default arm poses must contain 7 angles per arm.");
+            return;
+        }
+
+        SetArmImmediate(_leftArm, leftDefaultPose);
+        SetArmImmediate(_rightArm, rightDefaultPose);
+
+        Debug.Log("RobotArmController: Default arm pose applied.");
     }
 
     /// <summary>

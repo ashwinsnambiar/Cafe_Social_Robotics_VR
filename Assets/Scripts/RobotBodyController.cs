@@ -19,7 +19,27 @@ public class RobotBodyController : MonoBehaviour
     void Start()
     {
 
+        if (ExperimentSessionManager.Instance == null || !ExperimentSessionManager.Instance.operatorMode)
+        {
+            return;
+        }
+        
+        
+        if (link_up_down_body == null)
+        {
+            Debug.LogError("RobotBodyController: Up/Down body joint is not assigned");
+                return;
+        }
 
+        float maxHeight = link_up_down_body.zDrive.upperLimit;
+
+        //link_up_down_body.jointPosition = new ArticulationReducedSpace(maxHeight);
+        ArticulationDrive drive = link_up_down_body.zDrive;
+
+        MoveBodyAndHead(drive.upperLimit, 0f, 0f);
+
+        Debug.Log($"Robot body initializedd at maximum height: {maxHeight}");
+        
     }
 
     /// <summary>

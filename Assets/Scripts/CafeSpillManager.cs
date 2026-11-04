@@ -31,6 +31,9 @@ public class CafeSpillManager : MonoBehaviour
     [Tooltip("Fired after the spill is fully set up (cup + indicator spawned). Passes the spilled cup's Transform.")]
     public UnityEvent<Transform> onSpillOccurred;
 
+    [Header("Input Blocking")]
+    public RobotCustomSpeechInput customSpeechInput;
+
     private bool hasSpilled = false;
     private bool isLocked = false;
 
@@ -42,6 +45,10 @@ public class CafeSpillManager : MonoBehaviour
 
     void Update()
     {
+
+        if (customSpeechInput != null && customSpeechInput.IsTyping)
+            return;
+
         if (Keyboard.current != null && Keyboard.current[triggerKey].wasPressedThisFrame)
         {
             if (hasSpilled)
