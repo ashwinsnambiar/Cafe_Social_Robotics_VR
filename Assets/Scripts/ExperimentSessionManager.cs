@@ -102,6 +102,9 @@ public class ExperimentSessionManager : MonoBehaviour
     [Tooltip("NutritionBreakdown TextMeshPro GameObject under FoodDetailsCanvas (auto-found if unassigned).")]
     public GameObject nutritionBreakdownTextObject;
 
+    [Header("Input Blocking")]
+    public RobotCustomSpeechInput customSpeechInput;
+
     [Header("Events")]
     public UnityEvent<int> onSetTransitionStarted;
     public UnityEvent onAllSetsFinished;
@@ -365,6 +368,11 @@ public class ExperimentSessionManager : MonoBehaviour
 
     private void HandleKeyboardShortcuts()
     {
+       
+
+        if (customSpeechInput != null && customSpeechInput.IsTyping)
+            return;
+
         if (Keyboard.current == null) return;
 
         // [Space] or [N] -> Confirm proceed during break, or advance set
