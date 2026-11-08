@@ -248,6 +248,7 @@ public class OrderManager : MonoBehaviour
             if (currentOrderInSetIndex < currentSet.orders.Count)
             {
                 yield return new WaitForSeconds(spawnInterval);
+                yield return new WaitUntil(() => isPaused || activeOrders.Count == 0);
             }
         }
     }
