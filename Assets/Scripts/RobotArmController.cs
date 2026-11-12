@@ -136,7 +136,11 @@ public class RobotArmController : MonoBehaviour
         for (int i = 0; i < arm.Length; i++)
             maxDelta = Mathf.Max(maxDelta, Mathf.Abs(targetAngles[i] - startAngles[i]));
 
-        if (maxDelta < 0.01f) yield break;
+        if (maxDelta < 0.01f)
+        {
+            onComplete?.Invoke();
+            yield break;
+        }
 
         float duration = maxDelta / jointSpeed;
         float elapsed  = 0f;

@@ -210,6 +210,10 @@ public class DeliveryRobot : MonoBehaviour
                 deliveryRoutine = null;
             }
 
+            traySecuredThisCycle = false;
+            tableSelectedThisCycle = false;
+            selectedTableThisCycle = -1;
+
             OnDeliveryFinished?.Invoke();
         }
     }
@@ -229,64 +233,115 @@ public class DeliveryRobot : MonoBehaviour
         while (deliveryEnabled)
         {
             isActivelyDelivering = false;
-            traySecuredThisCycle = false;
-            tableSelectedThisCycle = false;
-            selectedTableThisCycle = -1;
 
-            // Initialize arms and body to rest pose
+            // Do NOT reset tray/table flags here.
+            // They might already have been set while this routine
+            // was preparing after cleanup.
+
+            // 1. Initialize arms and body
             bool armsReady = false;
             bool bodyReady = false;
 
             float[] restPose = { 0f, -90f, 0f, 85f, 0f, -20f, 0f };
 
-            armController.MoveBothArms(restPose, restPose, () => armsReady = true);
-            bodyController.MoveBodyAndHead(0.5f, 0f, 0f, () => bodyReady = true);
+            armController.MoveBothArms(
+                restPose, restPose,
+                () => armsReady = true
+            );
 
-            yield return new WaitUntil(() => armsReady && bodyReady);
+            bodyController.MoveBodyAndHead(
+                0.5f, 0f, 0f,
+                () => bodyReady = true
+            );
 
+            yield return new WaitUntil(
+                () => (armsReady && bodyReady) || !deliveryEnabled
+            );
+
+            if (!deliveryEnabled)
+                break;
+
+            // 2. Move to tray pickup position
             GoToBar();
 
             yield return new WaitUntil(() =>
-                agent != null &&
-                !agent.pathPending &&
-                agent.remainingDistance <= agent.stoppingDistance
+                !deliveryEnabled ||
+                (agent != null &&
+                 !agent.pathPending &&
+                 agent.remainingDistance <= agent.stoppingDistance)
             );
+
+            if (!deliveryEnabled)
+                break;
 
             EnableSocketInteractors();
 
-            void OnSecured() => traySecuredThisCycle = true;
-            OnTraySecuredEvent += OnSecured;
+            // 3. Wait for tray (real or simulated)
+            Debug.Log("DeliveryRobot: Waiting for tray.");
 
-            yield return new WaitUntil(() => traySecuredThisCycle || !deliveryEnabled);
-            OnTraySecuredEvent -= OnSecured;
+            yield return new WaitUntil(
+                () => traySecuredThisCycle || !deliveryEnabled
+            );
 
             if (!deliveryEnabled)
                 break;
 
             isActivelyDelivering = true;
 
-            void OnTableSelected(int idx)
+            // 4. Wait for operator to select a table
+            Debug.Log("DeliveryRobot: Waiting for table selection.");
+
+            yield return new WaitUntil(
+                () => tableSelectedThisCycle || !deliveryEnabled
+            );
+
+            // If a cleanup interrupted us while waiting,
+            // notify the scheduler so it can start cleanup.
+            if (!deliveryEnabled)
             {
-                tableSelectedThisCycle = true;
-                selectedTableThisCycle = idx;
+                Debug.Log("DeliveryRobot: Delivery interrupted by cleanup.");
+
+                isActivelyDelivering = false;
+                currentTarget = null;
+
+                traySecuredThisCycle = false;
+                tableSelectedThisCycle = false;
+                selectedTableThisCycle = -1;
+
+                OnDeliveryFinished?.Invoke();
+                break;
             }
 
-            OnTableSelectedEvent += OnTableSelected;
+            // 5. Deliver to selected table
+            int targetTable = selectedTableThisCycle;
 
-            yield return new WaitUntil(() => tableSelectedThisCycle);
-            OnTableSelectedEvent -= OnTableSelected;
+            Debug.Log($"DeliveryRobot: Going to table {targetTable + 1}.");
 
-            yield return StartCoroutine(PrepareAndGoToTable(selectedTableThisCycle));
-            yield return StartCoroutine(PlaceTraysAndReturnToBar());
+            yield return StartCoroutine(
+                PrepareAndGoToTable(targetTable)
+            );
 
+            yield return StartCoroutine(
+                PlaceTraysAndReturnToBar()
+            );
+
+            // 6. Reset state for next delivery
             isActivelyDelivering = false;
             currentTarget = null;
+
+            traySecuredThisCycle = false;
+            tableSelectedThisCycle = false;
+            selectedTableThisCycle = -1;
+
+            Debug.Log("DeliveryRobot: Delivery completed.");
 
             OnDeliveryFinished?.Invoke();
 
             if (OrderManager.Instance != null)
                 OrderManager.Instance.CheckSetCompletion();
         }
+
+        deliveryRoutine = null;
     }
 
     private void Update()
@@ -343,6 +398,10 @@ public class DeliveryRobot : MonoBehaviour
 
         operatorHasTray = true;
         operatorPickupArmed = false;
+
+        // Remember this event even if the automatic coroutine
+        // has not yet reached its tray-waiting step.
+        traySecuredThisCycle = true;
 
         // Keep compatibility with the old automatic delivery coroutine.
         OnTraySecuredEvent?.Invoke();
@@ -427,6 +486,25 @@ public class DeliveryRobot : MonoBehaviour
         {
             Debug.LogWarning("DeliveryRobot: Cannot start delivery. Robot does not have a tray yet.");
             return;
+        }
+
+
+        if (!operatorMode)
+        {
+            if (!deliveryEnabled || !traySecuredThisCycle)
+            {
+                Debug.LogWarning(
+                    "DeliveryRobot: Automatic delivery is not ready for table selection."
+                );
+                return;
+            }
+
+            if (tableSelectedThisCycle)
+                return;
+
+            // Remember the selected table until the coroutine processes it.
+            selectedTableThisCycle = tableIndex;
+            tableSelectedThisCycle = true;
         }
 
         // Validation/logging should happen only after we know delivery is valid.
@@ -770,4 +848,15 @@ public class DeliveryRobot : MonoBehaviour
 
         Debug.Log("DeliveryRobot: Operator pickup armed. Waiting for tray.");
     }
+
+#if UNITY_EDITOR
+    [ContextMenu("TEST - Simulate Tray Secured")]
+    private void SimulateTraySecured()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        OnTraySecured();
+    }
+#endif
 }
