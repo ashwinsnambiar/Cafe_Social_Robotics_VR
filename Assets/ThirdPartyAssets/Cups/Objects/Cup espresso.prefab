@@ -317,7 +317,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd43a228178de94ca10d6cb51d77200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DishItem
-  itemType: 1
+  itemType: 13
 --- !u!4 &8719737865587591876 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9079be7ffbda735448edbb89b91dabf6, type: 3}
